@@ -1,89 +1,237 @@
 export const STYLES_LIST = [
-  { id: 'brutalism',           label: 'Brutalism' },
-  { id: 'japandi',             label: 'Japandi' },
-  { id: 'wabi-sabi',           label: 'Wabi-Sabi' },
-  { id: 'bauhaus',             label: 'Bauhaus' },
-  { id: 'deconstructivism',    label: 'Deconstructivism' },
-  { id: 'new-minimalism',      label: 'New Minimalism' },
-  { id: 'scandinavian',        label: 'Scandinavian' },
-  { id: 'mediterranean',       label: 'Mediterranean' },
-  { id: 'industrial-loft',     label: 'Industrial Loft' },
-  { id: 'organic-modern',      label: 'Organic Modern' },
-  { id: 'high-tech',           label: 'High-Tech' },
-  { id: 'tropical-modern',     label: 'Tropical Modern' },
-  { id: 'critical-regionalism',label: 'Critical Regionalism' },
-  { id: 'biophilic',           label: 'Biophilic Design' },
-  { id: 'art-deco',            label: 'Art Deco' },
-  { id: 'neo-classical',       label: 'Neo-Classical' },
+  { id: 'brutalism',            label: 'Brutalism' },
+  { id: 'japandi',              label: 'Japandi' },
+  { id: 'wabi-sabi',            label: 'Wabi-Sabi' },
+  { id: 'bauhaus',              label: 'Bauhaus' },
+  { id: 'deconstructivism',     label: 'Deconstructivism' },
+  { id: 'new-minimalism',       label: 'New Minimalism' },
+  { id: 'scandinavian',         label: 'Scandinavian' },
+  { id: 'mediterranean',        label: 'Mediterranean' },
+  { id: 'industrial-loft',      label: 'Industrial Loft' },
+  { id: 'organic-modern',       label: 'Organic Modern' },
+  { id: 'high-tech',            label: 'High-Tech' },
+  { id: 'tropical-modern',      label: 'Tropical Modern' },
+  { id: 'critical-regionalism', label: 'Critical Regionalism' },
+  { id: 'biophilic',            label: 'Biophilic Design' },
+  { id: 'art-deco',             label: 'Art Deco' },
+  { id: 'neo-classical',        label: 'Neo-Classical' },
 ];
 
-const STYLE_KEYWORDS = {
-  'brutalism':            'raw concrete, exposed structure, monolithic forms, heavy materiality, bold geometric masses',
-  'japandi':              'wabi-sabi minimalism, natural wood, muted earth tones, functional simplicity, zen balance',
-  'wabi-sabi':            'imperfection, patina, organic textures, aged materials, understated beauty, transience',
-  'bauhaus':              'functional geometry, primary colors, clean lines, industrial craft, form follows function',
-  'deconstructivism':     'fragmented forms, non-linear geometry, angular disruption, clashing elements',
-  'new-minimalism':       'clean volumes, restrained palette, negative space, refined details, silent luxury',
-  'scandinavian':         'hygge warmth, pale wood, white walls, cozy textiles, light-filled simplicity',
-  'mediterranean':        'terracotta, arched openings, warm plaster, cobalt accents, sun-drenched textures',
-  'industrial-loft':      'exposed brick, steel beams, factory windows, aged metal, utilitarian elegance',
-  'organic-modern':       'curved forms, biomorphic shapes, warm neutrals, natural stone, soft sculpture',
-  'high-tech':            'structural glass, precision steel, mechanical systems, transparency, engineered detail',
-  'tropical-modern':      'lush greenery, open-air living, teak and stone, natural ventilation, indoor-outdoor flow',
-  'critical-regionalism': 'local materials, cultural context, climate response, vernacular reinterpretation',
-  'biophilic':            'living walls, natural light, water features, organic materials, connection to nature',
-  'art-deco':             'geometric ornament, gold and black, symmetry, bold patterns, opulent materials',
-  'neo-classical':        'columns, pediments, symmetry, marble, classical proportions, timeless grandeur',
+// ─── Style Synthesis Map ───────────────────────────────────────────────────
+
+const STYLE_SYNTHESIS_MAP = {
+  'brutalism+japandi': {
+    token:     'raw concrete mass with meditative timber warmth',
+    light:     'raking directional light, deep shadow contrast with soft diffusion',
+    material:  'board-formed concrete, white oak, washi paper panels, raw steel',
+    tension:   'monumental scale compressed into intimate silence',
+    architect: 'Tadao Ando spatial sensibility',
+  },
+  'brutalism+scandinavian': {
+    token:     'heavy raw structure softened by Nordic lightness',
+    light:     'flat northern diffused light washing raw surfaces',
+    material:  'exposed concrete, birch plywood, linen, pale stone',
+    tension:   'weight meets weightlessness',
+    architect: 'Sigurd Lewerentz materiality',
+  },
+  'bauhaus+tropical-modern': {
+    token:     'geometric precision dissolved by organic growth',
+    light:     'diffused equatorial light through structural louvers',
+    material:  'primary color steel, lush indoor vegetation, terrazzo',
+    tension:   'grid as armature, nature as infill',
+    architect: 'Oscar Niemeyer structural poetry',
+  },
+  'japandi+biophilic': {
+    token:     'meditative restraint woven with living material',
+    light:     'filtered green light through layered vegetation',
+    material:  'bamboo, moss wall panels, river stone, undyed linen',
+    tension:   'cultivated nature within constructed silence',
+    architect: 'Kengo Kuma material dissolution',
+  },
+  'wabi-sabi+industrial-loft': {
+    token:     'deliberate imperfection within raw industrial shell',
+    light:     'single skylight shaft cutting industrial volume',
+    material:  'rusted patina steel, cracked plaster, reclaimed timber',
+    tension:   'beauty of age inside machinery of production',
+    architect: 'Carlo Scarpa detail reverence',
+  },
+  'high-tech+organic-modern': {
+    token:     'engineered precision shaped by natural curves',
+    light:     'dynamic LED integration within flowing organic forms',
+    material:  'ETFE membrane, curved glass, living green wall systems',
+    tension:   'machine intelligence mimicking biological growth',
+    architect: 'Renzo Piano structural transparency',
+  },
+  'deconstructivism+mediterranean': {
+    token:     'fractured geometry bathed in southern warmth',
+    light:     'harsh Mediterranean sun fracturing through angular apertures',
+    material:  'white plaster fragments, terracotta shards, cobalt accent',
+    tension:   'ancient order violently questioned',
+    architect: 'Frank Gehry collisional forms',
+  },
+  'art-deco+new-minimalism': {
+    token:     'geometric opulence distilled to pure essential line',
+    light:     'concealed cove lighting gilding structural edges',
+    material:  'fluted brass, honed marble, ebonized oak, blackened steel',
+    tension:   'maximum with minimum — gold in silence',
+    architect: 'John Pawson refined austerity',
+  },
 };
 
-const VISUAL_KEYWORDS = {
-  materials:  { concrete: 'raw concrete surfaces', wood: 'natural wood grain', metal: 'brushed metal accents', stone: 'natural stone', glass: 'structural glass', mixed: 'mixed raw materials' },
-  palette:    { warm: 'warm earth tones', cool: 'cool blue-grey palette', neutral: 'neutral whites and beiges', contrasted: 'high contrast black and white' },
-  light:      { 'soft-diffused': 'soft diffused natural light', 'dramatic-direct': 'dramatic direct sunlight', 'natural-gentle': 'gentle ambient light' },
-  atmosphere: { minimalist: 'minimal clean atmosphere', organic: 'organic flowing atmosphere', industrial: 'industrial raw atmosphere', luxury: 'quiet luxury atmosphere' },
-};
-
-export function synthesizeStyles(styleA, styleB) {
-  if (!styleA && !styleB) return '';
-  const kA = STYLE_KEYWORDS[styleA] || styleA;
-  const kB = STYLE_KEYWORDS[styleB] || styleB;
+function buildDefaultSynthesis(styleA, styleB) {
   const labelA = STYLES_LIST.find(s => s.id === styleA)?.label || styleA;
   const labelB = STYLES_LIST.find(s => s.id === styleB)?.label || styleB;
-  if (!styleB) return kA;
-  if (!styleA) return kB;
-  return `${labelA} meets ${labelB}: ${kA.split(',')[0]}, blended with ${kB.split(',')[0]}`;
+  return {
+    token:     `${labelA} principles in dialogue with ${labelB} sensibility`,
+    light:     'considered natural light amplifying material character',
+    material:  'curated material palette bridging both traditions',
+    tension:   `productive tension between ${labelA} and ${labelB}`,
+    architect: `contemporary synthesis of ${labelA} and ${labelB} lineages`,
+  };
 }
 
-function visualContext(visualDescription) {
-  const parts = [];
-  for (const [cat, val] of Object.entries(visualDescription)) {
-    if (val && VISUAL_KEYWORDS[cat]?.[val]) parts.push(VISUAL_KEYWORDS[cat][val]);
+export function getSynthesis(styleA, styleB) {
+  if (!styleA && !styleB) return null;
+  if (!styleB || !styleA) {
+    const label = STYLES_LIST.find(s => s.id === (styleA || styleB))?.label || (styleA || styleB);
+    return { token: `${label} spatial language`, light: 'considered natural light', material: label.toLowerCase() + ' material palette', tension: label + ' compositional logic', architect: label + ' precedent' };
   }
-  return parts.join(', ');
+  const k1 = `${styleA}+${styleB}`;
+  const k2 = `${styleB}+${styleA}`;
+  return STYLE_SYNTHESIS_MAP[k1] || STYLE_SYNTHESIS_MAP[k2] || buildDefaultSynthesis(styleA, styleB);
 }
+
+// ─── Token Maps ────────────────────────────────────────────────────────────
+
+const MATERIAL_TOKENS = {
+  concrete: 'raw board-formed concrete, visible formwork texture',
+  wood:     'warm-toned timber, visible grain, natural oil finish',
+  metal:    'brushed steel panels, patinated brass accents',
+  stone:    'honed limestone, rough-hewn travertine veining',
+  glass:    'structural glazing, fritted glass, translucent membrane',
+  mixed:    'layered material palette, deliberate material transitions',
+};
+
+const PALETTE_TOKENS = {
+  warm:       'ochre, burnt sienna, warm grey, aged brass undertones',
+  cool:       'slate, fog, pewter, cool white, shadow blue',
+  neutral:    'raw linen, bone, natural concrete, bleached oak',
+  contrasted: 'deep charcoal against bright white, sharp tonal opposition',
+};
+
+const LIGHT_TOKENS = {
+  'soft-diffused':   'even northern diffused light, no harsh shadows, volumetric softness',
+  'dramatic-direct': 'raking directional sunlight, deep cast shadows, chiaroscuro contrast',
+  'natural-gentle':  'filtered ambient daylight, soft penumbra transitions',
+};
+
+const ATMOSPHERE_TOKENS = {
+  minimalist: 'strict spatial economy, void as protagonist, nothing superfluous',
+  organic:    'curved transitions, material warmth, absence of right angles',
+  industrial: 'exposed structural systems, mechanical honesty, utilitarian beauty',
+  luxury:     'refined material selection, concealed craftsmanship, sensory richness',
+};
+
+const BUILDING_TYPE_TOKENS = {
+  private: {
+    scale:   'intimate residential scale, human proportioned volumes',
+    texture: 'warm residential materiality, domestic comfort',
+    view:    'interior perspective from living zone, personal scale',
+  },
+  building: {
+    scale:   'architectural monumental scale, civic proportions',
+    texture: 'refined commercial finish, institutional presence',
+    view:    'architectural perspective showing structural expression',
+  },
+};
+
+const CAMERA_BASE = {
+  camera:   'Shot on Hasselblad X2D 100C, Zeiss Otus 28mm f/1.4',
+  settings: 'f/8, ISO 100, natural light, no flash, no HDR',
+  rules:    'rule of thirds, foreground shadow anchors lower left, depth through three layered planes, single vanishing point, 20% negative space minimum',
+};
+
+const ROOM_CAMERA = {
+  living:   'eye-level interior perspective, 28mm, capturing spatial flow',
+  kitchen:  'three-quarter view showing counter and volume, 35mm tilt-shift',
+  bedroom:  'low angle from entry threshold looking toward fenestration, 28mm',
+  bathroom: 'tight architectural detail, 50mm, material and light focus',
+};
+
+const BOARD_CAMERA = {
+  materials: 'flat lay material study, overhead 90°, Macro 100mm, tactile focus',
+  colors:    'architectural color field study, abstract tonal arrangement',
+  mood:      'atmospheric interior fragment, shallow depth, 85mm f/1.4',
+};
+
+const NO_PEOPLE = 'No people, no text, no frame divisions, no wide-angle distortion, no watermark.';
+const SUFFIX = '--ar 16:9 --v 6.1 --style raw';
+
+// ─── Prompt Builders ───────────────────────────────────────────────────────
 
 export function generatePrompt(type, project) {
-  const { styleSynthesis, visualDescription, buildingType } = project;
-  const synthesis = styleSynthesis?.synthesisToken || synthesizeStyles(styleSynthesis?.styleA, styleSynthesis?.styleB);
-  const visual = visualContext(visualDescription || {});
-  const bType = buildingType === 'private' ? 'private residence' : 'apartment building';
-  const base = [synthesis, visual, bType].filter(Boolean).join(', ');
+  const { visualDescription = {}, styleSynthesis = {}, buildingType = 'private' } = project;
+  const synthesis = getSynthesis(styleSynthesis.styleA, styleSynthesis.styleB);
+  const mat   = MATERIAL_TOKENS[visualDescription.materials]  || '';
+  const pal   = PALETTE_TOKENS[visualDescription.palette]     || '';
+  const light = LIGHT_TOKENS[visualDescription.light]         || '';
+  const atmo  = ATMOSPHERE_TOKENS[visualDescription.atmosphere] || '';
+  const build = BUILDING_TYPE_TOKENS[buildingType] || BUILDING_TYPE_TOKENS.private;
 
-  const prompts = {
-    materials: `Architectural materials mood board, ${base}, material samples flat lay, stone marble wood metal fabric swatches, studio lighting, editorial photography, 16:9 --ar 16:9 --v 6.1 --style raw`,
-    colors:    `Architectural color palette board, ${base}, paint chips color swatches gradient study, minimal layout white background, professional design presentation, 16:9 --ar 16:9 --v 6.1 --style raw`,
-    mood:      `Architectural inspiration mood board, ${base}, collage of textures details spaces, editorial layout, high contrast, cinematic references --ar 16:9 --v 6.1 --style raw`,
-    living:    `Interior design living room, ${base}, golden hour light, architectural photography, ultra-detailed, 8k, photorealistic --ar 16:9 --v 6.1 --style raw`,
-    kitchen:   `Interior design kitchen, ${base}, professional kitchen photography, ambient lighting, ultra-detailed surfaces, 8k --ar 16:9 --v 6.1 --style raw`,
-    bedroom:   `Interior design master bedroom, ${base}, soft morning light, luxury bedding, architectural photography, ultra-detailed, 8k --ar 16:9 --v 6.1 --style raw`,
-    bathroom:  `Interior design bathroom, ${base}, spa-like atmosphere, natural stone, ambient candlelight, architectural photography, 8k --ar 16:9 --v 6.1 --style raw`,
+  const boardTypes = ['materials', 'colors', 'mood'];
+  if (boardTypes.includes(type)) {
+    const cam = BOARD_CAMERA[type];
+    const subjects = {
+      materials: `Architectural material study board — ${mat}, ${pal}`,
+      colors:    `Architectural color palette board — ${pal}, ${atmo}`,
+      mood:      `Architectural mood inspiration board — ${atmo}, ${synthesis?.token || ''}`,
+    };
+    const parts = [
+      subjects[type] + '.',
+      synthesis ? `${synthesis.architect}, ${synthesis.tension}.` : '',
+      synthesis ? `${synthesis.material}, ${synthesis.light}.` : '',
+      light && `${light}, ${build.texture}.`,
+      `${cam}, ${CAMERA_BASE.settings}.`,
+      CAMERA_BASE.rules + '.',
+      'Photorealistic architectural photography.',
+      SUFFIX,
+      NO_PEOPLE,
+    ];
+    return parts.filter(Boolean).join(' ');
+  }
+
+  const roomNames = {
+    living:   'living room interior',
+    kitchen:  'kitchen interior',
+    bedroom:  'master bedroom interior',
+    bathroom: 'bathroom interior',
   };
-
-  return prompts[type] || '';
+  const cam = ROOM_CAMERA[type];
+  const parts = [
+    `${roomNames[type]}, ${synthesis?.token || ''}.`,
+    [mat, pal, atmo].filter(Boolean).join(', ') + '.',
+    synthesis ? `${synthesis.architect}, ${synthesis.tension}.` : '',
+    synthesis ? synthesis.material + '.' : '',
+    light && `${light}, ${build.scale}.`,
+    cam && `${cam}, ${CAMERA_BASE.camera}, ${CAMERA_BASE.settings}.`,
+    CAMERA_BASE.rules + '.',
+    'Photorealistic architectural interior photography, magazine quality.',
+    SUFFIX,
+    NO_PEOPLE,
+  ];
+  return parts.filter(Boolean).join(' ');
 }
 
+// synthesizeStyles is used for the synthesis token display
+export function synthesizeStyles(styleA, styleB) {
+  const s = getSynthesis(styleA, styleB);
+  return s?.token || '';
+}
+
+// ─── UI Metadata ───────────────────────────────────────────────────────────
+
 export const VISUAL_OPTIONS = {
-  materials:  [
+  materials: [
     { id: 'concrete', label: 'בטון' },
     { id: 'wood',     label: 'עץ טבעי' },
     { id: 'metal',    label: 'מתכת' },
