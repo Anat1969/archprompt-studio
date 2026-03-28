@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { generatePrompt } from '../lib/promptEngine';
+import { addImageToGallery } from '../lib/storage';
 
 const SECTION_MAP = {
   materials: 'boards',
@@ -38,6 +39,16 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
   function handleImageChange(dataUrl) {
     const updated = { ...cardData, resultImage: dataUrl, status: 'filled' };
     onUpdate(section, updated);
+    // Save to gallery immediately
+    if (project.id && project.name) {
+      addImageToGallery(
+        dataUrl,
+        project.id,
+        project.name,
+        project.styleSynthesis?.styleA || '',
+        project.styleSynthesis?.styleB || ''
+      );
+    }
   }
 
   function handlePaste(e) {

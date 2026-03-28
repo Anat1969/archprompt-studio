@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { loadProjects } from '../lib/storage';
+import { loadProjects, getGalleryImages } from '../lib/storage';
 import { jsPDF } from 'jspdf';
 
 const ALL_KEYS = [
@@ -21,12 +21,16 @@ export default function Gallery() {
   const [project, setProject] = useState(null);
   const [lightbox, setLightbox] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [galleryImages, setGalleryImages] = useState([]);
 
   useEffect(() => {
     const projects = loadProjects();
     const found = projects.find(p => p.id === id);
     if (found) setProject(found);
     else navigate('/');
+    // Load gallery images for this project
+    const images = getGalleryImages();
+    setGalleryImages(images.filter(img => img.projectId === id));
   }, [id]);
 
   useEffect(() => {
@@ -134,6 +138,33 @@ export default function Gallery() {
       </div>
 
       <div className="px-6 py-8 flex flex-col gap-10">
+        {/* Uploaded Images Gallery */}
+        {galleryImages.length > 0 && (
+          <div>
+            <h2 className="font-display text-2xl font-light text-muted-foreground mb-4 pb-2 border-b border-border/40 tracking-wide">תמונות שהועלו</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {galleryImages.map((img) => (
+                <div
+                  key={img.id}
+                  className="group cursor-pointer border border-border hover:border-gold/50 transition-all overflow-hidden"
+                  onClick={() => setLightbox({ image: img })}
+                >
+                  <div className="aspect-video overflow-hidden bg-secondary">
+                    <img
+                      src={img.imageData}
+                      alt={`${img.styleName} #${img.sequenceNum}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="px-3 py-2">
+                    <p className="font-display text-base font-light text-foreground group-hover:text-gold transition-colors">{img.styleName}</p>
+                    <p className="font-mono text-xs text-muted-foreground">#{img.sequenceNum}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {sections.map(sectionLabel => {
           const cards = ALL_KEYS.filter(k => k.sectionLabel === sectionLabel && project[k.section]?.[k.key]?.resultImage);
           if (cards.length === 0) return null;
@@ -185,17 +216,19 @@ export default function Gallery() {
         >
           <div className="relative max-w-5xl w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <p className="font-display text-xl font-light text-gold">{lightbox.title}</p>
+              <p className="font-display text-xl font-light text-gold">
+                {lightbox.image ? `${lightbox.image.styleName} #${lightbox.image.sequenceNum}` : lightbox.title}
+              </p>
               <button onClick={() => setLightbox(null)} className="font-mono text-sm text-muted-foreground hover:text-gold transition-colors px-2">
                 × סגור
               </button>
             </div>
             <img
-              src={project[lightbox.section][lightbox.key].resultImage}
-              alt={lightbox.title}
+              src={lightbox.image ? lightbox.image.imageData : project[lightbox.section][lightbox.key].resultImage}
+              alt={lightbox.image ? lightbox.image.styleName : lightbox.title}
               className="w-full object-contain max-h-[80vh]"
             />
-            {project[lightbox.section][lightbox.key].prompt && (
+            {!lightbox.image && project[lightbox.section][lightbox.key].prompt && (
               <div className="mt-3 border border-border/50 bg-card px-4 py-3">
                 <p className="font-mono text-xs text-muted-foreground leading-relaxed" dir="ltr">{project[lightbox.section][lightbox.key].prompt}</p>
               </div>

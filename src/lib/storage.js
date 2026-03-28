@@ -1,5 +1,6 @@
 const GALLERY_KEY = 'promptStudio_gallery';
 const CURRENT_KEY = 'promptStudio_current';
+const IMAGES_GALLERY_KEY = 'promptStudio_images';
 
 export function loadProjects() {
   try {
@@ -61,10 +62,39 @@ export function deleteProject(id) {
   localStorage.setItem(GALLERY_KEY, JSON.stringify({ projects }));
 }
 
-export function createProject(name = 'פרויקט חדש') {
+export function addImageToGallery(image, projectId, projectName, styleA, styleB) {
+  const images = getGalleryImages();
+  const sequenceNum = images.filter(img => img.projectId === projectId).length + 1;
+  const styleName = [styleA, styleB].filter(Boolean).join(' + ') || 'no-style';
+  const newImage = {
+    id: Date.now().toString(),
+    projectId,
+    projectName,
+    styleA,
+    styleB,
+    styleName,
+    sequenceNum,
+    imageData: image,
+    createdAt: Date.now(),
+  };
+  images.unshift(newImage);
+  localStorage.setItem(IMAGES_GALLERY_KEY, JSON.stringify(images));
+  return newImage;
+}
+
+export function getGalleryImages() {
+  try {
+    return JSON.parse(localStorage.getItem(IMAGES_GALLERY_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+export function createProject(name) {
+  const projectName = name || 'new-project';
   return {
     id: Date.now().toString(),
-    name,
+    name: projectName,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     inspirationImage: null,
