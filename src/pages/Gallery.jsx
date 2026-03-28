@@ -7,6 +7,8 @@ const ALL_KEYS = [
   { key: 'materials', section: 'boards', title: 'לוח חומרים',  sectionLabel: 'לוחות בסיס' },
   { key: 'colors',    section: 'boards', title: 'לוח צבעים',   sectionLabel: 'לוחות בסיס' },
   { key: 'mood',      section: 'boards', title: 'לוח השראה',   sectionLabel: 'לוחות בסיס' },
+  { key: 'private',   section: 'buildingTypes', title: 'בית פרטי',   sectionLabel: 'סוג מבנה' },
+  { key: 'building',  section: 'buildingTypes', title: 'בניין',       sectionLabel: 'סוג מבנה' },
   { key: 'living',    section: 'rooms',  title: 'סלון',         sectionLabel: 'חדרים' },
   { key: 'kitchen',   section: 'rooms',  title: 'מטבח',         sectionLabel: 'חדרים' },
   { key: 'bedroom',   section: 'rooms',  title: 'חדר שינה',     sectionLabel: 'חדרים' },
