@@ -20,6 +20,10 @@ export default function Home() {
     navigate(`/work/${id}`);
   }
 
+  function handleGallery() {
+    navigate('/gallery');
+  }
+
   function handleDelete(e, id) {
     e.stopPropagation();
     deleteProject(id);
@@ -38,12 +42,20 @@ export default function Home() {
           <h1 className="font-display text-5xl font-light tracking-widest text-gold">PROMPT STUDIO</h1>
           <p className="font-mono text-xs text-muted-foreground mt-1 tracking-wider">ARCHITECTURAL MIDJOURNEY GENERATOR</p>
         </div>
-        <button
-          onClick={handleNew}
-          className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-obsidian transition-all duration-200"
-        >
-          + פרויקט חדש
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleNew}
+            className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-obsidian transition-all duration-200"
+          >
+            + פרויקט חדש
+          </button>
+          <button
+            onClick={handleGallery}
+            className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-obsidian transition-all duration-200"
+          >
+            GALLERY
+          </button>
+        </div>
       </header>
 
       {/* Content */}

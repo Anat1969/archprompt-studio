@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { loadProjects, getGalleryImages } from '../lib/storage';
 import { jsPDF } from 'jspdf';
 
@@ -16,22 +16,22 @@ const ALL_KEYS = [
 ];
 
 export default function Gallery() {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const [project, setProject] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [lightbox, setLightbox] = useState(null);
   const [exporting, setExporting] = useState(false);
-  const [galleryImages, setGalleryImages] = useState([]);
+  const [allGalleryImages, setAllGalleryImages] = useState([]);
 
   useEffect(() => {
-    const projects = loadProjects();
-    const found = projects.find(p => p.id === id);
-    if (found) setProject(found);
-    else navigate('/');
-    // Load gallery images for this project
+    const allProjects = loadProjects();
+    setProjects(allProjects);
     const images = getGalleryImages();
-    setGalleryImages(images.filter(img => img.projectId === id));
-  }, [id]);
+    setAllGalleryImages(images);
+    if (allProjects.length > 0) {
+      setSelectedProjectId(allProjects[0].id);
+    }
+  }, []);
 
   useEffect(() => {
     function handleKey(e) {
@@ -40,6 +40,9 @@ export default function Gallery() {
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, []);
+
+  const currentProject = projects.find(p => p.id === selectedProjectId);
+  const projectImages = allGalleryImages.filter(img => img.projectId === selectedProjectId);
 
   async function handleExportPDF() {
     setExporting(true);
@@ -51,16 +54,16 @@ export default function Gallery() {
     doc.rect(0, 0, pageW, pageH, 'F');
     doc.setTextColor(201, 169, 110);
     doc.setFontSize(32);
-    doc.text(project.name, pageW / 2, pageH / 2 - 10, { align: 'center' });
-    const styleA = project.styleSynthesis?.styleA;
-    const styleB = project.styleSynthesis?.styleB;
+    doc.text(currentProject.name, pageW / 2, pageH / 2 - 10, { align: 'center' });
+    const styleA = currentProject.styleSynthesis?.styleA;
+    const styleB = currentProject.styleSynthesis?.styleB;
     if (styleA) {
       doc.setFontSize(11);
       doc.setTextColor(150, 130, 100);
       doc.text(styleA + (styleB ? ` × ${styleB}` : ''), pageW / 2, pageH / 2 + 10, { align: 'center' });
     }
 
-    const filled = ALL_KEYS.filter(k => project[k.section]?.[k.key]?.resultImage);
+    const filled = ALL_KEYS.filter(k => currentProject[k.section]?.[k.key]?.resultImage);
     for (const { key, section, title } of filled) {
       doc.addPage();
       doc.setFillColor(10, 10, 11);
@@ -68,9 +71,9 @@ export default function Gallery() {
       doc.setTextColor(201, 169, 110);
       doc.setFontSize(14);
       doc.text(title, 10, 12);
-      const img = project[section][key].resultImage;
+      const img = currentProject[section][key].resultImage;
       doc.addImage(img, 'JPEG', 10, 18, pageW - 20, pageH - 28);
-      const prompt = project[section][key].prompt;
+      const prompt = currentProject[section][key].prompt;
       if (prompt) {
         doc.setFontSize(6);
         doc.setTextColor(100, 100, 100);
@@ -78,26 +81,26 @@ export default function Gallery() {
       }
     }
 
-    doc.save(`${project.name || 'prompt-studio'}.pdf`);
+    doc.save(`${currentProject.name || 'prompt-studio'}.pdf`);
     setExporting(false);
   }
 
-  if (!project) return (
+  if (!currentProject) return (
     <div className="min-h-screen bg-obsidian flex items-center justify-center">
       <span className="font-mono text-xs text-muted-foreground">טוען...</span>
     </div>
   );
 
   const sections = ['לוחות בסיס', 'חדרים'];
-  const hasImages = ALL_KEYS.some(k => project[k.section]?.[k.key]?.resultImage);
+  const hasImages = ALL_KEYS.some(k => currentProject[k.section]?.[k.key]?.resultImage);
 
   return (
     <div className="min-h-screen bg-obsidian">
       <header className="border-b border-border px-6 py-4 flex items-center gap-4">
-        <button onClick={() => navigate(`/work/${id}`)} className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors">
-          → חזרה לפרויקט
+        <button onClick={() => navigate('/')} className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors">
+          → HOME
         </button>
-        <h1 className="font-display text-2xl font-light text-foreground flex-1">{project.name}</h1>
+        <h1 className="font-display text-2xl font-light text-foreground flex-1">GALLERY</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={handleExportPDF}
@@ -106,44 +109,86 @@ export default function Gallery() {
           >
             {exporting ? 'מייצא...' : 'ייצוא PDF'}
           </button>
-          <span className="font-mono text-xs text-muted-foreground tracking-widest">GALLERY</span>
         </div>
       </header>
 
-      {project.inspirationImage && (
+      {/* Project Selector */}
+      <div className="border-b border-border px-6 py-4 overflow-x-auto">
+        <div className="flex gap-3">
+          {projects.map((proj, idx) => {
+            const projImages = allGalleryImages.filter(img => img.projectId === proj.id);
+            const firstImage = projImages[0];
+            const count = projImages.length;
+            return (
+              <button
+                key={proj.id}
+                onClick={() => setSelectedProjectId(proj.id)}
+                className={`flex-shrink-0 border transition-all ${
+                  selectedProjectId === proj.id
+                    ? 'border-gold bg-gold/10'
+                    : 'border-border hover:border-gold/50'
+                }`}
+              >
+                {firstImage ? (
+                  <div className="relative">
+                    <img src={firstImage.imageData} alt={proj.name} className="w-28 h-28 object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-obsidian to-transparent flex items-end">
+                      <div className="p-2 w-full">
+                        <p className="font-mono text-xs text-gold font-bold">{idx + 1}</p>
+                        <p className="font-mono text-xs text-muted-foreground/80">{count} תמונות</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-28 h-28 bg-secondary flex flex-col items-center justify-center">
+                    <p className="font-mono text-xs text-gold font-bold">{idx + 1}</p>
+                    <p className="font-mono text-xs text-muted-foreground mt-1">ריק</p>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {currentProject.inspirationImage && (
         <div className="w-full h-48 overflow-hidden border-b border-border relative">
-          <img src={project.inspirationImage} alt="השראה" className="w-full h-full object-cover opacity-60" />
+          <img src={currentProject.inspirationImage} alt="השראה" className="w-full h-full object-cover opacity-60" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-obsidian pointer-events-none" />
         </div>
       )}
 
       <div className="px-6 py-6 border-b border-border/50">
         <div className="flex flex-wrap gap-6">
-          {project.styleSynthesis?.styleA && (
+          <div>
+            <p className="font-mono text-xs text-muted-foreground mb-1">PROJECT</p>
+            <p className="font-display text-lg font-light text-gold">{currentProject.name}</p>
+          </div>
+          {currentProject.styleSynthesis?.styleA && (
             <div>
               <p className="font-mono text-xs text-muted-foreground mb-1">STYLE</p>
-              <p className="font-mono text-xs text-gold">{project.styleSynthesis.styleA}{project.styleSynthesis.styleB ? ` × ${project.styleSynthesis.styleB}` : ''}</p>
+              <p className="font-mono text-xs text-gold">{currentProject.styleSynthesis.styleA}{currentProject.styleSynthesis.styleB ? ` × ${currentProject.styleSynthesis.styleB}` : ''}</p>
             </div>
           )}
-          {project.buildingType && (
+          {currentProject.buildingType && (
             <div>
               <p className="font-mono text-xs text-muted-foreground mb-1">TYPE</p>
-              <p className="font-mono text-xs text-foreground">{project.buildingType === 'private' ? 'בית פרטי' : 'בניין'}</p>
+              <p className="font-mono text-xs text-foreground">{currentProject.buildingType === 'private' ? 'בית פרטי' : 'בניין'}</p>
             </div>
           )}
         </div>
-        {project.styleSynthesis?.synthesisToken && (
-          <p className="font-mono text-xs text-gold/50 mt-3 leading-relaxed" dir="ltr">{project.styleSynthesis.synthesisToken}</p>
+        {currentProject.styleSynthesis?.synthesisToken && (
+          <p className="font-mono text-xs text-gold/50 mt-3 leading-relaxed" dir="ltr">{currentProject.styleSynthesis.synthesisToken}</p>
         )}
       </div>
 
       <div className="px-6 py-8 flex flex-col gap-10">
         {/* Uploaded Images Gallery */}
-        {galleryImages.length > 0 && (
+        {projectImages.length > 0 && (
           <div>
             <h2 className="font-display text-2xl font-light text-muted-foreground mb-4 pb-2 border-b border-border/40 tracking-wide">תמונות שהועלו</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {galleryImages.map((img) => (
+              {projectImages.map((img) => (
                 <div
                   key={img.id}
                   className="group cursor-pointer border border-border hover:border-gold/50 transition-all overflow-hidden"
@@ -166,7 +211,7 @@ export default function Gallery() {
           </div>
         )}
         {sections.map(sectionLabel => {
-          const cards = ALL_KEYS.filter(k => k.sectionLabel === sectionLabel && project[k.section]?.[k.key]?.resultImage);
+          const cards = ALL_KEYS.filter(k => k.sectionLabel === sectionLabel && currentProject[k.section]?.[k.key]?.resultImage);
           if (cards.length === 0) return null;
           return (
             <div key={sectionLabel}>
@@ -180,7 +225,7 @@ export default function Gallery() {
                   >
                     <div className="aspect-video overflow-hidden bg-secondary">
                       <img
-                        src={project[section][key].resultImage}
+                        src={currentProject[section][key].resultImage}
                         alt={title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
@@ -200,7 +245,7 @@ export default function Gallery() {
             <p className="font-display text-3xl font-light text-muted-foreground">אין תמונות עדיין</p>
             <p className="font-mono text-xs text-muted-foreground mt-2">הדבק תמונות מהמידג'רני בכרטיסי הפרומפט</p>
             <button
-              onClick={() => navigate(`/work/${id}`)}
+              onClick={() => navigate(`/work/${selectedProjectId}`)}
               className="mt-6 font-mono text-xs border border-gold/50 text-gold px-6 py-2 hover:border-gold transition-colors"
             >
               חזרה לפרויקט
@@ -224,13 +269,13 @@ export default function Gallery() {
               </button>
             </div>
             <img
-              src={lightbox.image ? lightbox.image.imageData : project[lightbox.section][lightbox.key].resultImage}
+              src={lightbox.image ? lightbox.image.imageData : currentProject[lightbox.section][lightbox.key].resultImage}
               alt={lightbox.image ? lightbox.image.styleName : lightbox.title}
               className="w-full object-contain max-h-[80vh]"
             />
-            {!lightbox.image && project[lightbox.section][lightbox.key].prompt && (
+            {!lightbox.image && currentProject[lightbox.section][lightbox.key].prompt && (
               <div className="mt-3 border border-border/50 bg-card px-4 py-3">
-                <p className="font-mono text-xs text-muted-foreground leading-relaxed" dir="ltr">{project[lightbox.section][lightbox.key].prompt}</p>
+                <p className="font-mono text-xs text-muted-foreground leading-relaxed" dir="ltr">{currentProject[lightbox.section][lightbox.key].prompt}</p>
               </div>
             )}
           </div>
