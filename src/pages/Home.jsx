@@ -38,12 +38,20 @@ export default function Home() {
           <h1 className="font-display text-5xl font-light tracking-widest text-gold">PROMPT STUDIO</h1>
           <p className="font-mono text-xs text-muted-foreground mt-1 tracking-wider">ARCHITECTURAL MIDJOURNEY GENERATOR</p>
         </div>
-        <button
-          onClick={handleNew}
-          className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-obsidian transition-all duration-200"
-        >
-          + פרויקט חדש
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/gallery')}
+            className="border border-border text-muted-foreground font-mono text-xs tracking-widest px-6 py-3 hover:border-gold hover:text-gold transition-all duration-200"
+          >
+            גלריה
+          </button>
+          <button
+            onClick={handleNew}
+            className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-obsidian transition-all duration-200"
+          >
+            + פרויקט חדש
+          </button>
+        </div>
       </header>
 
       {/* Content */}
