@@ -7,15 +7,15 @@ import VisualChips from '../components/VisualChips';
 import PromptCard from '../components/PromptCard';
 
 const BASE_BOARDS = [
-  { key: 'materialsBoard', title: 'לוח חומרים' },
-  { key: 'colorBoard', title: 'לוח צבעים' },
-  { key: 'inspirationBoard', title: 'לוח השראה' },
+  { key: 'materials', title: 'לוח חומרים' },
+  { key: 'colors',    title: 'לוח צבעים' },
+  { key: 'mood',      title: 'לוח השראה' },
 ];
 
 const ROOM_CARDS = [
-  { key: 'livingRoom', title: 'סלון' },
-  { key: 'kitchen', title: 'מטבח' },
-  { key: 'bedroom', title: 'חדר שינה' },
+  { key: 'living',   title: 'סלון' },
+  { key: 'kitchen',  title: 'מטבח' },
+  { key: 'bedroom',  title: 'חדר שינה' },
   { key: 'bathroom', title: 'חדר רחצה' },
 ];
 
@@ -32,13 +32,6 @@ export default function WorkScreen() {
     else navigate('/');
   }, [id]);
 
-  function update(partial) {
-    setProject(prev => {
-      const updated = { ...prev, ...partial };
-      return updated;
-    });
-  }
-
   function autoSave(partial) {
     setProject(prev => {
       const updated = { ...prev, ...partial };
@@ -47,26 +40,29 @@ export default function WorkScreen() {
     });
   }
 
-  function updateStyles(field, value) {
-    const styles = { ...(project.styles || {}), [field]: value };
-    const synthesis = synthesizeStyles(
-      field === 'primary' ? value : styles.primary,
-      field === 'secondary' ? value : styles.secondary
+  function updateStyleSynthesis(field, value) {
+    const styleSynthesis = { ...(project.styleSynthesis || {}), [field]: value };
+    styleSynthesis.synthesisToken = synthesizeStyles(
+      field === 'styleA' ? value : styleSynthesis.styleA,
+      field === 'styleB' ? value : styleSynthesis.styleB
     );
-    autoSave({ styles, synthesis });
+    autoSave({ styleSynthesis });
   }
 
-  function handlePromptChange(key, value) {
-    autoSave({ prompts: { ...project.prompts, [key]: value } });
+  function handlePromptChange(section, key, value) {
+    const updated = { ...project[section], [key]: { ...project[section][key], prompt: value } };
+    autoSave({ [section]: updated });
   }
 
-  function handleGenerate(key) {
+  function handleGenerate(section, key) {
     const prompt = generatePrompt(key, project);
-    autoSave({ prompts: { ...project.prompts, [key]: prompt } });
+    const updated = { ...project[section], [key]: { ...project[section][key], prompt } };
+    autoSave({ [section]: updated });
   }
 
-  function handleImagePaste(key, dataUrl) {
-    autoSave({ images: { ...project.images, [key]: dataUrl } });
+  function handleImagePaste(section, key, dataUrl) {
+    const updated = { ...project[section], [key]: { ...project[section][key], resultImage: dataUrl, status: 'filled' } };
+    autoSave({ [section]: updated });
   }
 
   function handleSaveGallery() {
@@ -80,6 +76,8 @@ export default function WorkScreen() {
       <span className="font-mono text-xs text-muted-foreground">טוען...</span>
     </div>
   );
+
+  const synthesis = project.styleSynthesis?.synthesisToken;
 
   return (
     <div className="min-h-screen bg-obsidian">
@@ -96,14 +94,12 @@ export default function WorkScreen() {
             placeholder="שם פרויקט"
           />
         </div>
-        {project.inspirationImage && (
-          <button
-            onClick={() => navigate(`/gallery/${id}`)}
-            className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors border border-border hover:border-gold/50 px-3 py-1.5"
-          >
-            גלרייה
-          </button>
-        )}
+        <button
+          onClick={() => navigate(`/gallery/${id}`)}
+          className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors border border-border hover:border-gold/50 px-3 py-1.5"
+        >
+          גלרייה
+        </button>
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col gap-10">
@@ -121,8 +117,8 @@ export default function WorkScreen() {
         <section>
           <SectionTitle>תיאור ויזואלי</SectionTitle>
           <VisualChips
-            visual={project.visual || {}}
-            onChange={(visual) => autoSave({ visual })}
+            visualDescription={project.visualDescription || {}}
+            onChange={(visualDescription) => autoSave({ visualDescription })}
           />
         </section>
 
@@ -132,33 +128,33 @@ export default function WorkScreen() {
           <div className="flex flex-col gap-4">
             <div className="flex gap-4 flex-wrap">
               <div className="flex flex-col gap-1 flex-1 min-w-48">
-                <label className="font-mono text-xs text-muted-foreground tracking-widest">סגנון ראשי</label>
+                <label className="font-mono text-xs text-muted-foreground tracking-widest">סגנון A</label>
                 <select
-                  value={project.styles?.primary || ''}
-                  onChange={(e) => updateStyles('primary', e.target.value)}
+                  value={project.styleSynthesis?.styleA || ''}
+                  onChange={(e) => updateStyleSynthesis('styleA', e.target.value)}
                   className="bg-secondary border border-border text-foreground font-mono text-xs px-3 py-2 focus:outline-none focus:border-gold/50"
                   dir="ltr"
                 >
                   <option value="">— בחר סגנון —</option>
-                  {STYLES_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                  {STYLES_LIST.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1 flex-1 min-w-48">
-                <label className="font-mono text-xs text-muted-foreground tracking-widest">סגנון משני</label>
+                <label className="font-mono text-xs text-muted-foreground tracking-widest">סגנון B</label>
                 <select
-                  value={project.styles?.secondary || ''}
-                  onChange={(e) => updateStyles('secondary', e.target.value)}
+                  value={project.styleSynthesis?.styleB || ''}
+                  onChange={(e) => updateStyleSynthesis('styleB', e.target.value)}
                   className="bg-secondary border border-border text-foreground font-mono text-xs px-3 py-2 focus:outline-none focus:border-gold/50"
                   dir="ltr"
                 >
                   <option value="">— בחר סגנון —</option>
-                  {STYLES_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                  {STYLES_LIST.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                 </select>
               </div>
             </div>
-            {project.synthesis && (
+            {synthesis && (
               <div className="border border-gold/20 bg-gold/5 px-4 py-3">
-                <p className="font-mono text-xs text-gold/80 leading-relaxed" dir="ltr">{project.synthesis}</p>
+                <p className="font-mono text-xs text-gold/80 leading-relaxed" dir="ltr">{synthesis}</p>
               </div>
             )}
           </div>
@@ -168,7 +164,7 @@ export default function WorkScreen() {
         <section>
           <SectionTitle>סוג מבנה</SectionTitle>
           <div className="flex gap-0 border border-border w-fit">
-            {[{ value: 'house', label: 'בית פרטי' }, { value: 'building', label: 'בניין' }].map(({ value, label }) => (
+            {[{ value: 'private', label: 'בית פרטי' }, { value: 'building', label: 'בניין' }].map(({ value, label }) => (
               <button
                 key={value}
                 onClick={() => autoSave({ buildingType: value })}
@@ -192,12 +188,11 @@ export default function WorkScreen() {
               <PromptCard
                 key={key}
                 title={title}
-                promptKey={key}
-                prompt={project.prompts?.[key] || ''}
-                image={project.images?.[key] || null}
-                onGenerate={() => handleGenerate(key)}
-                onPromptChange={handlePromptChange}
-                onImagePaste={handleImagePaste}
+                prompt={project.boards?.[key]?.prompt || ''}
+                image={project.boards?.[key]?.resultImage || null}
+                onGenerate={() => handleGenerate('boards', key)}
+                onPromptChange={(_, value) => handlePromptChange('boards', key, value)}
+                onImagePaste={(_, dataUrl) => handleImagePaste('boards', key, dataUrl)}
               />
             ))}
           </div>
@@ -211,12 +206,11 @@ export default function WorkScreen() {
               <PromptCard
                 key={key}
                 title={title}
-                promptKey={key}
-                prompt={project.prompts?.[key] || ''}
-                image={project.images?.[key] || null}
-                onGenerate={() => handleGenerate(key)}
-                onPromptChange={handlePromptChange}
-                onImagePaste={handleImagePaste}
+                prompt={project.rooms?.[key]?.prompt || ''}
+                image={project.rooms?.[key]?.resultImage || null}
+                onGenerate={() => handleGenerate('rooms', key)}
+                onPromptChange={(_, value) => handlePromptChange('rooms', key, value)}
+                onImagePaste={(_, dataUrl) => handleImagePaste('rooms', key, dataUrl)}
               />
             ))}
           </div>

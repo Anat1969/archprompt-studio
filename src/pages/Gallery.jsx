@@ -4,13 +4,13 @@ import { loadProjects } from '../lib/storage';
 import { jsPDF } from 'jspdf';
 
 const ALL_KEYS = [
-  { key: 'materialsBoard', title: 'לוח חומרים', section: 'לוחות בסיס' },
-  { key: 'colorBoard', title: 'לוח צבעים', section: 'לוחות בסיס' },
-  { key: 'inspirationBoard', title: 'לוח השראה', section: 'לוחות בסיס' },
-  { key: 'livingRoom', title: 'סלון', section: 'חדרים' },
-  { key: 'kitchen', title: 'מטבח', section: 'חדרים' },
-  { key: 'bedroom', title: 'חדר שינה', section: 'חדרים' },
-  { key: 'bathroom', title: 'חדר רחצה', section: 'חדרים' },
+  { key: 'materials', section: 'boards', title: 'לוח חומרים',  sectionLabel: 'לוחות בסיס' },
+  { key: 'colors',    section: 'boards', title: 'לוח צבעים',   sectionLabel: 'לוחות בסיס' },
+  { key: 'mood',      section: 'boards', title: 'לוח השראה',   sectionLabel: 'לוחות בסיס' },
+  { key: 'living',    section: 'rooms',  title: 'סלון',         sectionLabel: 'חדרים' },
+  { key: 'kitchen',   section: 'rooms',  title: 'מטבח',         sectionLabel: 'חדרים' },
+  { key: 'bedroom',   section: 'rooms',  title: 'חדר שינה',     sectionLabel: 'חדרים' },
+  { key: 'bathroom',  section: 'rooms',  title: 'חדר רחצה',     sectionLabel: 'חדרים' },
 ];
 
 export default function Gallery() {
@@ -41,34 +41,34 @@ export default function Gallery() {
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
 
-    // Cover page
     doc.setFillColor(10, 10, 11);
     doc.rect(0, 0, pageW, pageH, 'F');
     doc.setTextColor(201, 169, 110);
     doc.setFontSize(32);
     doc.text(project.name, pageW / 2, pageH / 2 - 10, { align: 'center' });
-    if (project.styles?.primary) {
+    const styleA = project.styleSynthesis?.styleA;
+    const styleB = project.styleSynthesis?.styleB;
+    if (styleA) {
       doc.setFontSize(11);
       doc.setTextColor(150, 130, 100);
-      const styleLabel = project.styles.primary + (project.styles.secondary ? ` × ${project.styles.secondary}` : '');
-      doc.text(styleLabel, pageW / 2, pageH / 2 + 10, { align: 'center' });
+      doc.text(styleA + (styleB ? ` × ${styleB}` : ''), pageW / 2, pageH / 2 + 10, { align: 'center' });
     }
 
-    const filled = ALL_KEYS.filter(k => project.images?.[k.key]);
-    for (const { key, title } of filled) {
+    const filled = ALL_KEYS.filter(k => project[k.section]?.[k.key]?.resultImage);
+    for (const { key, section, title } of filled) {
       doc.addPage();
       doc.setFillColor(10, 10, 11);
       doc.rect(0, 0, pageW, pageH, 'F');
       doc.setTextColor(201, 169, 110);
       doc.setFontSize(14);
       doc.text(title, 10, 12);
-      const img = project.images[key];
-      const imgH = pageH - 24;
-      doc.addImage(img, 'JPEG', 10, 18, pageW - 20, imgH);
-      if (project.prompts?.[key]) {
+      const img = project[section][key].resultImage;
+      doc.addImage(img, 'JPEG', 10, 18, pageW - 20, pageH - 28);
+      const prompt = project[section][key].prompt;
+      if (prompt) {
         doc.setFontSize(6);
         doc.setTextColor(100, 100, 100);
-        doc.text(project.prompts[key].slice(0, 200), 10, pageH - 2);
+        doc.text(prompt.slice(0, 250), 10, pageH - 2);
       }
     }
 
@@ -83,10 +83,10 @@ export default function Gallery() {
   );
 
   const sections = ['לוחות בסיס', 'חדרים'];
+  const hasImages = ALL_KEYS.some(k => project[k.section]?.[k.key]?.resultImage);
 
   return (
     <div className="min-h-screen bg-obsidian">
-      {/* Header */}
       <header className="border-b border-border px-6 py-4 flex items-center gap-4">
         <button onClick={() => navigate(`/work/${id}`)} className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors">
           → חזרה לפרויקט
@@ -95,8 +95,8 @@ export default function Gallery() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleExportPDF}
-            disabled={exporting}
-            className="font-mono text-xs border border-border text-muted-foreground hover:border-gold/50 hover:text-gold px-3 py-1.5 transition-colors disabled:opacity-50"
+            disabled={exporting || !hasImages}
+            className="font-mono text-xs border border-border text-muted-foreground hover:border-gold/50 hover:text-gold px-3 py-1.5 transition-colors disabled:opacity-30"
           >
             {exporting ? 'מייצא...' : 'ייצוא PDF'}
           </button>
@@ -104,53 +104,50 @@ export default function Gallery() {
         </div>
       </header>
 
-      {/* Inspiration banner */}
       {project.inspirationImage && (
-        <div className="w-full h-48 overflow-hidden border-b border-border">
+        <div className="w-full h-48 overflow-hidden border-b border-border relative">
           <img src={project.inspirationImage} alt="השראה" className="w-full h-full object-cover opacity-60" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-obsidian pointer-events-none" />
         </div>
       )}
 
-      {/* Project meta */}
       <div className="px-6 py-6 border-b border-border/50">
         <div className="flex flex-wrap gap-6">
-          {project.styles?.primary && (
+          {project.styleSynthesis?.styleA && (
             <div>
               <p className="font-mono text-xs text-muted-foreground mb-1">STYLE</p>
-              <p className="font-mono text-xs text-gold">{project.styles.primary}{project.styles.secondary ? ` × ${project.styles.secondary}` : ''}</p>
+              <p className="font-mono text-xs text-gold">{project.styleSynthesis.styleA}{project.styleSynthesis.styleB ? ` × ${project.styleSynthesis.styleB}` : ''}</p>
             </div>
           )}
           {project.buildingType && (
             <div>
               <p className="font-mono text-xs text-muted-foreground mb-1">TYPE</p>
-              <p className="font-mono text-xs text-foreground">{project.buildingType === 'house' ? 'בית פרטי' : 'בניין'}</p>
+              <p className="font-mono text-xs text-foreground">{project.buildingType === 'private' ? 'בית פרטי' : 'בניין'}</p>
             </div>
           )}
         </div>
-        {project.synthesis && (
-          <p className="font-mono text-xs text-gold/50 mt-3 leading-relaxed" dir="ltr">{project.synthesis}</p>
+        {project.styleSynthesis?.synthesisToken && (
+          <p className="font-mono text-xs text-gold/50 mt-3 leading-relaxed" dir="ltr">{project.styleSynthesis.synthesisToken}</p>
         )}
       </div>
 
-      {/* Grid by sections */}
       <div className="px-6 py-8 flex flex-col gap-10">
-        {sections.map(section => {
-          const cards = ALL_KEYS.filter(k => k.section === section && project.images?.[k.key]);
+        {sections.map(sectionLabel => {
+          const cards = ALL_KEYS.filter(k => k.sectionLabel === sectionLabel && project[k.section]?.[k.key]?.resultImage);
           if (cards.length === 0) return null;
           return (
-            <div key={section}>
-              <h2 className="font-display text-2xl font-light text-muted-foreground mb-4 pb-2 border-b border-border/40 tracking-wide">{section}</h2>
+            <div key={sectionLabel}>
+              <h2 className="font-display text-2xl font-light text-muted-foreground mb-4 pb-2 border-b border-border/40 tracking-wide">{sectionLabel}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {cards.map(({ key, title }) => (
+                {cards.map(({ key, section, title }) => (
                   <div
                     key={key}
                     className="group cursor-pointer border border-border hover:border-gold/50 transition-all overflow-hidden"
-                    onClick={() => setLightbox({ key, title })}
+                    onClick={() => setLightbox({ key, section, title })}
                   >
                     <div className="aspect-video overflow-hidden bg-secondary">
                       <img
-                        src={project.images[key]}
+                        src={project[section][key].resultImage}
                         alt={title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
@@ -165,7 +162,7 @@ export default function Gallery() {
           );
         })}
 
-        {ALL_KEYS.every(k => !project.images?.[k.key]) && (
+        {!hasImages && (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <p className="font-display text-3xl font-light text-muted-foreground">אין תמונות עדיין</p>
             <p className="font-mono text-xs text-muted-foreground mt-2">הדבק תמונות מהמידג'רני בכרטיסי הפרומפט</p>
@@ -179,7 +176,6 @@ export default function Gallery() {
         )}
       </div>
 
-      {/* Lightbox */}
       {lightbox && (
         <div
           className="fixed inset-0 bg-obsidian/95 z-50 flex items-center justify-center p-4"
@@ -188,21 +184,18 @@ export default function Gallery() {
           <div className="relative max-w-5xl w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <p className="font-display text-xl font-light text-gold">{lightbox.title}</p>
-              <button
-                onClick={() => setLightbox(null)}
-                className="font-mono text-sm text-muted-foreground hover:text-gold transition-colors px-2"
-              >
+              <button onClick={() => setLightbox(null)} className="font-mono text-sm text-muted-foreground hover:text-gold transition-colors px-2">
                 × סגור
               </button>
             </div>
             <img
-              src={project.images[lightbox.key]}
+              src={project[lightbox.section][lightbox.key].resultImage}
               alt={lightbox.title}
               className="w-full object-contain max-h-[80vh]"
             />
-            {project.prompts?.[lightbox.key] && (
+            {project[lightbox.section][lightbox.key].prompt && (
               <div className="mt-3 border border-border/50 bg-card px-4 py-3">
-                <p className="font-mono text-xs text-muted-foreground leading-relaxed" dir="ltr">{project.prompts[lightbox.key]}</p>
+                <p className="font-mono text-xs text-muted-foreground leading-relaxed" dir="ltr">{project[lightbox.section][lightbox.key].prompt}</p>
               </div>
             )}
           </div>

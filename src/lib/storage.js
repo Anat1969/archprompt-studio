@@ -1,29 +1,35 @@
-const PROJECTS_KEY = 'prompt_studio_projects';
+const GALLERY_KEY = 'promptStudio_gallery';
+const CURRENT_KEY = 'promptStudio_current';
 
 export function loadProjects() {
   try {
-    return JSON.parse(localStorage.getItem(PROJECTS_KEY) || '[]');
+    const gallery = JSON.parse(localStorage.getItem(GALLERY_KEY) || '{"projects":[]}');
+    return gallery.projects || [];
   } catch {
     return [];
   }
 }
 
 export function saveProject(project) {
+  const updated = { ...project, updatedAt: Date.now() };
+  // Save as current
+  localStorage.setItem(CURRENT_KEY, JSON.stringify(updated));
+  // Save to gallery
   const projects = loadProjects();
   const idx = projects.findIndex(p => p.id === project.id);
-  const updated = { ...project, updatedAt: Date.now() };
   if (idx >= 0) {
     projects[idx] = updated;
   } else {
     projects.unshift(updated);
   }
-  localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+  projects.sort((a, b) => b.updatedAt - a.updatedAt);
+  localStorage.setItem(GALLERY_KEY, JSON.stringify({ projects }));
   return updated;
 }
 
 export function deleteProject(id) {
   const projects = loadProjects().filter(p => p.id !== id);
-  localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+  localStorage.setItem(GALLERY_KEY, JSON.stringify({ projects }));
 }
 
 export function createProject(name = 'פרויקט חדש') {
@@ -33,32 +39,28 @@ export function createProject(name = 'פרויקט חדש') {
     createdAt: Date.now(),
     updatedAt: Date.now(),
     inspirationImage: null,
-    buildingType: 'house',
-    styles: { primary: '', secondary: '' },
-    synthesis: '',
-    visual: {
-      materials: [],
-      palette: [],
-      light: [],
-      atmosphere: [],
+    buildingType: 'private',
+    visualDescription: {
+      materials: '',
+      palette: '',
+      light: '',
+      atmosphere: '',
     },
-    prompts: {
-      materialsBoard: '',
-      colorBoard: '',
-      inspirationBoard: '',
-      livingRoom: '',
-      kitchen: '',
-      bedroom: '',
-      bathroom: '',
+    styleSynthesis: {
+      styleA: '',
+      styleB: '',
+      synthesisToken: '',
     },
-    images: {
-      materialsBoard: null,
-      colorBoard: null,
-      inspirationBoard: null,
-      livingRoom: null,
-      kitchen: null,
-      bedroom: null,
-      bathroom: null,
+    boards: {
+      materials: { prompt: '', resultImage: null, status: 'empty' },
+      colors:    { prompt: '', resultImage: null, status: 'empty' },
+      mood:      { prompt: '', resultImage: null, status: 'empty' },
+    },
+    rooms: {
+      living:   { prompt: '', resultImage: null, status: 'empty' },
+      kitchen:  { prompt: '', resultImage: null, status: 'empty' },
+      bedroom:  { prompt: '', resultImage: null, status: 'empty' },
+      bathroom: { prompt: '', resultImage: null, status: 'empty' },
     },
   };
 }
