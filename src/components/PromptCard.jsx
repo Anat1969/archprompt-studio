@@ -38,11 +38,11 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
     setTimeout(() => setCopied(false), 1500);
   }
 
-  async function handleImageChange(dataUrl) {
+  async function handleImageChange(file) {
     setUploading(true);
     try {
       // Upload to cloud
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: dataUrl });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const updated = { ...cardData, resultImage: file_url, status: 'filled' };
       onUpdate(section, updated);
       // Save to gallery with URL
@@ -65,35 +65,22 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
     if (!items) return;
     for (const item of items) {
       if (item.type.startsWith('image/')) {
-        const file = item.getAsFile();
-        const reader = new FileReader();
-        reader.onload = (ev) => handleImageChange(ev.target.result);
-        reader.readAsDataURL(file);
+        handleImageChange(item.getAsFile());
         break;
       }
     }
   }
-
-  function handleDrop(e) {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (ev) => handleImageChange(ev.target.result);
-      reader.readAsDataURL(file);
+      handleImageChange(file);
     }
   }
-
-  function handleFileInput(e) {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => handleImageChange(ev.target.result);
-      reader.readAsDataURL(file);
+      handleImageChange(file);
     }
   }
-
-  return (
     <div className="border border-border bg-card flex flex-col gap-0 overflow-hidden">
       {/* Title bar */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
