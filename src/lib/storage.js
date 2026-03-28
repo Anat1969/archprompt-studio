@@ -1,3 +1,5 @@
+import { STYLES_LIST } from './promptEngine';
+
 const GALLERY_KEY = 'promptStudio_gallery';
 const CURRENT_KEY = 'promptStudio_current';
 const IMAGES_GALLERY_KEY = 'promptStudio_images';
@@ -23,6 +25,8 @@ export function saveProject(project) {
   if (idx >= 0) {
     projects[idx] = cleaned;
   } else {
+    // New project: assign sequential number
+    cleaned.number = projects.length + 1;
     projects.unshift(cleaned);
   }
   projects.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -91,10 +95,10 @@ export function getGalleryImages() {
 }
 
 export function createProject(name) {
-  const projectName = name || 'new-project';
   return {
     id: Date.now().toString(),
-    name: projectName,
+    name: name || '',
+    number: 0, // Will be assigned on save
     createdAt: Date.now(),
     updatedAt: Date.now(),
     inspirationImage: null,
@@ -126,4 +130,13 @@ export function createProject(name) {
       building: { prompt: '', resultImage: null, status: 'empty' },
     },
   };
+}
+
+export function getProjectName(project) {
+  if (!project) return '';
+  const { styleSynthesis } = project;
+  if (!styleSynthesis?.styleA && !styleSynthesis?.styleB) return project.name;
+  const a = STYLES_LIST.find(s => s.id === styleSynthesis.styleA)?.label || '';
+  const b = STYLES_LIST.find(s => s.id === styleSynthesis.styleB)?.label || '';
+  return [a, b].filter(Boolean).join(' × ') || project.name;
 }

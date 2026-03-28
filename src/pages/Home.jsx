@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loadProjects, createProject, saveProject, deleteProject } from '../lib/storage';
+import { loadProjects, createProject, saveProject, deleteProject, getProjectName } from '../lib/storage';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -18,10 +18,6 @@ export default function Home() {
 
   function handleOpen(id) {
     navigate(`/work/${id}`);
-  }
-
-  function handleGallery() {
-    navigate('/gallery');
   }
 
   function handleDelete(e, id) {
@@ -42,20 +38,12 @@ export default function Home() {
           <h1 className="font-display text-5xl font-light tracking-widest text-gold">PROMPT STUDIO</h1>
           <p className="font-mono text-xs text-muted-foreground mt-1 tracking-wider">ARCHITECTURAL MIDJOURNEY GENERATOR</p>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handleNew}
-            className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-obsidian transition-all duration-200"
-          >
-            + פרויקט חדש
-          </button>
-          <button
-            onClick={handleGallery}
-            className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-obsidian transition-all duration-200"
-          >
-            GALLERY
-          </button>
-        </div>
+        <button
+          onClick={handleNew}
+          className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-obsidian transition-all duration-200"
+        >
+          + פרויקט חדש
+        </button>
       </header>
 
       {/* Content */}
@@ -67,41 +55,32 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <h2 className="font-display text-2xl font-light text-muted-foreground mb-6 tracking-wide">פרויקטים אחרונים</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {projects.map(p => (
-                <div
-                  key={p.id}
-                  onClick={() => handleOpen(p.id)}
-                  className="border border-border bg-card hover:border-gold cursor-pointer transition-all duration-200 group animate-fade-in"
-                >
-                  {/* Inspiration thumbnail */}
-                  <div className="aspect-video bg-secondary overflow-hidden">
-                    {p.inspirationImage ? (
-                      <img src={p.inspirationImage} alt={p.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="font-mono text-xs text-muted-foreground">ללא תמונה</span>
+            <h2 className="font-display text-2xl font-light text-muted-foreground mb-6 tracking-wide">פרויקטים</h2>
+            <div className="grid grid-cols-1 gap-3">
+              {projects.map(p => {
+                const displayName = getProjectName(p);
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => handleOpen(p.id)}
+                    className="border border-border bg-card hover:border-gold cursor-pointer transition-all duration-200 group p-4 flex items-center justify-between"
+                  >
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="font-mono text-lg font-bold text-gold min-w-12">#{String(p.number).padStart(2, '0')}</div>
+                      <div className="flex-1">
+                        <p className="font-display text-lg font-light text-foreground group-hover:text-gold transition-colors">{displayName}</p>
+                        <p className="font-mono text-xs text-muted-foreground mt-1">{formatDate(p.updatedAt)}</p>
                       </div>
-                    )}
-                  </div>
-                  <div className="p-4 flex items-start justify-between">
-                    <div>
-                      <p className="font-display text-lg font-light text-foreground group-hover:text-gold transition-colors">{p.name}</p>
-                      <p className="font-mono text-xs text-muted-foreground mt-1">{formatDate(p.updatedAt)}</p>
-                      {p.styles?.primary && (
-                        <p className="font-mono text-xs text-gold/60 mt-1">{p.styles.primary}{p.styles.secondary ? ` × ${p.styles.secondary}` : ''}</p>
-                      )}
                     </div>
                     <button
                       onClick={(e) => handleDelete(e, p.id)}
-                      className="font-mono text-xs text-muted-foreground hover:text-destructive transition-colors px-1"
+                      className="font-mono text-xs text-muted-foreground hover:text-destructive transition-colors px-2 py-1"
                     >
                       ×
                     </button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

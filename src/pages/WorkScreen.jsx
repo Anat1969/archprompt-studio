@@ -1,22 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { loadProjects, saveProject } from '../lib/storage';
+import { loadProjects, saveProject, getProjectName } from '../lib/storage';
 import { STYLES_LIST, generatePrompt, getSynthesis } from '../lib/promptEngine';
 import InspirationUpload from '../components/InspirationUpload';
 import VisualChips from '../components/VisualChips';
 import PromptCard from '../components/PromptCard';
 
-const BASE_BOARDS = [
+const BOARDS = [
   { key: 'materials', title: 'לוח חומרים' },
   { key: 'colors',    title: 'לוח צבעים' },
   { key: 'mood',      title: 'לוח השראה' },
 ];
 
-const ROOM_CARDS = [
+const ROOMS = [
   { key: 'living',   title: 'סלון' },
   { key: 'kitchen',  title: 'מטבח' },
   { key: 'bedroom',  title: 'חדר שינה' },
   { key: 'bathroom', title: 'חדר רחצה' },
+];
+
+const BUILDING_TYPES = [
+  { key: 'private',  title: 'בית פרטי — חוץ' },
+  { key: 'building', title: 'בניין — חוץ' },
 ];
 
 export default function WorkScreen() {
@@ -39,30 +44,42 @@ export default function WorkScreen() {
     });
   }
 
+  function handleSaveAndReturn() {
+    if (project) {
+      saveProject(project);
+    }
+    navigate('/');
+  }
+
   if (!project) return (
     <div className="min-h-screen bg-obsidian flex items-center justify-center">
       <span className="font-mono text-xs text-muted-foreground">טוען...</span>
     </div>
   );
 
+  const displayName = getProjectName(project);
+
   return (
     <div className="min-h-screen bg-obsidian">
       {/* Header */}
       <header className="border-b border-border px-6 py-4 sticky top-0 bg-obsidian z-10 flex items-center gap-4">
-        <button onClick={() => navigate('/')} className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors">
-          → PROMPT STUDIO
+        <button onClick={handleSaveAndReturn} className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors">
+          ← פרויקטים
         </button>
-        <input
-          value={project.name}
-          onChange={(e) => autoSave({ name: e.target.value })}
-          className="bg-transparent font-display text-2xl font-light text-foreground focus:outline-none focus:text-gold transition-colors flex-1 placeholder:text-muted-foreground/40"
-          placeholder="שם פרויקט"
-        />
+        <div className="flex-1 flex items-center gap-2">
+          <span className="font-mono text-sm font-bold text-gold">#{String(project.number).padStart(2, '0')}</span>
+          <input
+            value={project.name}
+            onChange={(e) => autoSave({ name: e.target.value })}
+            placeholder={displayName}
+            className="bg-transparent font-display text-2xl font-light text-foreground focus:outline-none focus:text-gold transition-colors placeholder:text-muted-foreground/40"
+          />
+        </div>
         <button
-          onClick={() => navigate(`/gallery/${id}`)}
+          onClick={handleSaveAndReturn}
           className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors border border-border hover:border-gold/50 px-3 py-1.5"
         >
-          גלרייה
+          שמור וחזור
         </button>
       </header>
 
@@ -92,29 +109,32 @@ export default function WorkScreen() {
           />
         </Section>
 
-        {/* Building Types */}
-        <Section title="סוג מבנה">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[{ key: 'private', title: 'בית פרטי' }, { key: 'building', title: 'בניין' }].map(({ key, title }) => (
-              <PromptCard
-                key={key}
-                type={key}
-                title={title}
-                project={project}
-                onUpdate={(section, updatedData) => {
-                  const updated = { ...project[section], [key]: updatedData };
-                  autoSave({ [section]: updated });
-                }}
-                isBuildingType={true}
-              />
+        {/* Building Type Toggle */}
+        <Section title="סוג מבנה (לחדרים)">
+          <div className="flex gap-3">
+            {[
+              { val: 'private', label: 'בית פרטי' },
+              { val: 'building', label: 'בניין' }
+            ].map(({ val, label }) => (
+              <button
+                key={val}
+                onClick={() => autoSave({ buildingType: val })}
+                className={`font-mono text-xs px-4 py-2 border transition-all ${
+                  project.buildingType === val
+                    ? 'border-gold bg-gold/10 text-gold'
+                    : 'border-border text-muted-foreground hover:border-gold/50'
+                }`}
+              >
+                {label}
+              </button>
             ))}
           </div>
         </Section>
 
         {/* Base Boards */}
-        <Section title="לוחות בסיס">
+        <Section title="לוחות בסיס (3 מנועים)">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {BASE_BOARDS.map(({ key, title }) => (
+            {BOARDS.map(({ key, title }) => (
               <PromptCard
                 key={key}
                 type={key}
@@ -130,9 +150,9 @@ export default function WorkScreen() {
         </Section>
 
         {/* Rooms */}
-        <Section title="חדרים">
+        <Section title="חדרים (4 מנועים)">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {ROOM_CARDS.map(({ key, title }) => (
+            {ROOMS.map(({ key, title }) => (
               <PromptCard
                 key={key}
                 type={key}
@@ -147,16 +167,32 @@ export default function WorkScreen() {
           </div>
         </Section>
 
-        {/* Save to Gallery */}
+        {/* Building Types - Exterior */}
+        <Section title="חוץ מבנה (2 מנועים)">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {BUILDING_TYPES.map(({ key, title }) => (
+              <PromptCard
+                key={key}
+                type={key}
+                title={title}
+                project={project}
+                onUpdate={(section, updatedData) => {
+                  const updated = { ...project[section], [key]: updatedData };
+                  autoSave({ [section]: updated });
+                }}
+                isBuildingType={true}
+              />
+            ))}
+          </div>
+        </Section>
+
+        {/* Save Button */}
         <div className="flex justify-center pb-10">
           <button
-            onClick={() => {
-              saveProject(project);
-              navigate(`/gallery/${id}`);
-            }}
+            onClick={handleSaveAndReturn}
             className="font-mono text-xs tracking-widest px-12 py-4 border border-gold/50 text-gold hover:border-gold hover:bg-gold/5 transition-all"
           >
-            שמור לגלרייה
+            שמור וחזור לרשימה
           </button>
         </div>
       </div>

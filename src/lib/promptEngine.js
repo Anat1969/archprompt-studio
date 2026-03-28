@@ -177,6 +177,25 @@ export function generatePrompt(type, project) {
   const atmo  = ATMOSPHERE_TOKENS[visualDescription.atmosphere] || '';
   const build = BUILDING_TYPE_TOKENS[buildingType] || BUILDING_TYPE_TOKENS.private;
 
+  // Exterior types (building exterior)
+  if (type === 'private' || type === 'building') {
+    const buildingLabels = {
+      private: 'residential house exterior',
+      building: 'commercial building facade',
+    };
+    const parts = [
+      `${buildingLabels[type]}, ${synthesis?.token || ''}.`,
+      [mat, pal, atmo].filter(Boolean).join(', ') + '.',
+      synthesis ? `${synthesis.architect}, ${synthesis.tension}.` : '',
+      synthesis ? synthesis.material + '.' : '',
+      light && `${light}, ${build.scale}.`,
+      `Architectural exterior view, ${type === 'private' ? 'residential scale' : 'civic proportions'}, ${CAMERA_BASE.camera}, ${CAMERA_BASE.settings}.`,
+      COMPOSITION_RULES,
+      'Photorealistic architectural photography, magazine quality.',
+    ];
+    return parts.filter(Boolean).join(' ');
+  }
+
   const boardTypes = ['materials', 'colors', 'mood'];
   if (boardTypes.includes(type)) {
     const subjects = {
