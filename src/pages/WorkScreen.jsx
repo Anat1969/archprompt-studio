@@ -98,7 +98,11 @@ export default function WorkScreen() {
             {[{ value: 'private', label: 'בית פרטי' }, { value: 'building', label: 'בניין' }].map(({ value, label }) => (
               <button
                 key={value}
-                onClick={() => autoSave({ buildingType: value })}
+                onClick={() => {
+                  autoSave({ buildingType: value });
+                  const prompt = generatePrompt('living', { ...project, buildingType: value });
+                  console.log('Generated prompt for', value, ':', prompt);
+                }}
                 className={`font-mono text-xs px-6 py-2.5 tracking-wider transition-all ${
                   project.buildingType === value
                     ? 'bg-gold text-obsidian'

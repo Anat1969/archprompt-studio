@@ -34,7 +34,8 @@ export default function PromptCard({ type, title, project, onUpdate }) {
   }
 
   function handleImageChange(dataUrl) {
-    onUpdate(section, { ...cardData, resultImage: dataUrl, status: 'filled' });
+    const updated = { ...cardData, resultImage: dataUrl, status: 'filled' };
+    onUpdate(section, updated);
   }
 
   function handlePaste(e) {
