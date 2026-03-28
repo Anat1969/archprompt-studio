@@ -78,7 +78,6 @@ export function addImageToGallery(image, projectId, projectName, styleA, styleB)
     styleB,
     styleName,
     sequenceNum,
-    imageData: image,
     createdAt: Date.now(),
   };
   images.unshift(newImage);
