@@ -9,9 +9,11 @@ const SECTION_MAP = {
   kitchen:   'rooms',
   bedroom:   'rooms',
   bathroom:  'rooms',
+  private:   'buildingTypes',
+  building:  'buildingTypes',
 };
 
-export default function PromptCard({ type, title, project, onUpdate }) {
+export default function PromptCard({ type, title, project, onUpdate, isBuildingType }) {
   const [copied, setCopied] = useState(false);
   const imageAreaRef = useRef(null);
   const section = SECTION_MAP[type];

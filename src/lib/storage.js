@@ -62,5 +62,9 @@ export function createProject(name = 'פרויקט חדש') {
       bedroom:  { prompt: '', resultImage: null, status: 'empty' },
       bathroom: { prompt: '', resultImage: null, status: 'empty' },
     },
+    buildingTypes: {
+      private:  { prompt: '', resultImage: null, status: 'empty' },
+      building: { prompt: '', resultImage: null, status: 'empty' },
+    },
   };
 }

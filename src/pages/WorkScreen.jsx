@@ -92,25 +92,21 @@ export default function WorkScreen() {
           />
         </Section>
 
-        {/* Building Type */}
+        {/* Building Types */}
         <Section title="סוג מבנה">
-          <div className="flex gap-0 border border-border w-fit">
-            {[{ value: 'private', label: 'בית פרטי' }, { value: 'building', label: 'בניין' }].map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => {
-                  autoSave({ buildingType: value });
-                  const prompt = generatePrompt('living', { ...project, buildingType: value });
-                  console.log('Generated prompt for', value, ':', prompt);
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[{ key: 'private', title: 'בית פרטי' }, { key: 'building', title: 'בניין' }].map(({ key, title }) => (
+              <PromptCard
+                key={key}
+                type={key}
+                title={title}
+                project={project}
+                onUpdate={(section, updatedData) => {
+                  const updated = { ...project[section], [key]: updatedData };
+                  autoSave({ [section]: updated });
                 }}
-                className={`font-mono text-xs px-6 py-2.5 tracking-wider transition-all ${
-                  project.buildingType === value
-                    ? 'bg-gold text-obsidian'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {label}
-              </button>
+                isBuildingType={true}
+              />
             ))}
           </div>
         </Section>
