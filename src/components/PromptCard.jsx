@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Copy } from 'lucide-react';
 
 export default function PromptCard({ title, promptKey, prompt, image, onGenerate, onPromptChange, onImagePaste }) {
   const [copied, setCopied] = useState(false);
