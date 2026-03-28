@@ -12,19 +12,48 @@ export function loadProjects() {
 
 export function saveProject(project) {
   const updated = { ...project, updatedAt: Date.now() };
+  // Strip images before saving (too large for localStorage)
+  const cleaned = stripImages(updated);
   // Save as current
-  localStorage.setItem(CURRENT_KEY, JSON.stringify(updated));
+  localStorage.setItem(CURRENT_KEY, JSON.stringify(cleaned));
   // Save to gallery
   const projects = loadProjects();
   const idx = projects.findIndex(p => p.id === project.id);
   if (idx >= 0) {
-    projects[idx] = updated;
+    projects[idx] = cleaned;
   } else {
-    projects.unshift(updated);
+    projects.unshift(cleaned);
   }
   projects.sort((a, b) => b.updatedAt - a.updatedAt);
   localStorage.setItem(GALLERY_KEY, JSON.stringify({ projects }));
   return updated;
+}
+
+function stripImages(project) {
+  const copy = { ...project };
+  if (copy.boards) {
+    copy.boards = Object.keys(copy.boards).reduce((acc, key) => {
+      const { resultImage, ...rest } = copy.boards[key];
+      acc[key] = rest;
+      return acc;
+    }, {});
+  }
+  if (copy.rooms) {
+    copy.rooms = Object.keys(copy.rooms).reduce((acc, key) => {
+      const { resultImage, ...rest } = copy.rooms[key];
+      acc[key] = rest;
+      return acc;
+    }, {});
+  }
+  if (copy.buildingTypes) {
+    copy.buildingTypes = Object.keys(copy.buildingTypes).reduce((acc, key) => {
+      const { resultImage, ...rest } = copy.buildingTypes[key];
+      acc[key] = rest;
+      return acc;
+    }, {});
+  }
+  copy.inspirationImage = null;
+  return copy;
 }
 
 export function deleteProject(id) {
