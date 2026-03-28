@@ -146,27 +146,9 @@ export default function WorkScreen() {
         </Section>
 
         {/* Building Types - Exterior */}
-        <Section title={`חוץ מבנה — ${project.buildingType === 'private' ? 'בית פרטי' : 'בניין'}`}>
-          <div className="mb-4 flex gap-3 border-b border-border pb-4">
-            {[
-              { val: 'private', label: 'בית פרטי' },
-              { val: 'building', label: 'בניין' }
-            ].map(({ val, label }) => (
-              <button
-                key={val}
-                onClick={() => autoSave({ buildingType: val })}
-                className={`font-mono text-xs px-4 py-2 border transition-all ${
-                  project.buildingType === val
-                    ? 'border-gold bg-gold/10 text-gold'
-                    : 'border-border text-muted-foreground hover:border-gold/50'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 gap-4">
-            {BUILDING_TYPES.filter(({ key }) => key === project.buildingType).map(({ key, title }) => (
+        <Section title="חוץ מבנה (2 מנועים)">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {BUILDING_TYPES.map(({ key, title }) => (
               <PromptCard
                 key={key}
                 type={key}
