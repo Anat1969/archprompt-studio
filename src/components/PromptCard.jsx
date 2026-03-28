@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { base44 } from '@/api/base44Client';
 import { generatePrompt } from '../lib/promptEngine';
 import { addImageToGallery } from '../lib/storage';
 
@@ -16,6 +17,7 @@ const SECTION_MAP = {
 
 export default function PromptCard({ type, title, project, onUpdate, isBuildingType }) {
   const [copied, setCopied] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const imageAreaRef = useRef(null);
   const section = SECTION_MAP[type];
   const cardData = project[section]?.[type] || { prompt: '', resultImage: null };
@@ -36,18 +38,25 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
     setTimeout(() => setCopied(false), 1500);
   }
 
-  function handleImageChange(dataUrl) {
-    const updated = { ...cardData, resultImage: dataUrl, status: 'filled' };
-    onUpdate(section, updated);
-    // Save to gallery immediately
-    if (project.id && project.name) {
-      addImageToGallery(
-        dataUrl,
-        project.id,
-        project.name,
-        project.styleSynthesis?.styleA || '',
-        project.styleSynthesis?.styleB || ''
-      );
+  async function handleImageChange(dataUrl) {
+    setUploading(true);
+    try {
+      // Upload to cloud
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: dataUrl });
+      const updated = { ...cardData, resultImage: file_url, status: 'filled' };
+      onUpdate(section, updated);
+      // Save to gallery with URL
+      if (project.id && project.name) {
+        addImageToGallery(
+          file_url,
+          project.id,
+          project.name,
+          project.styleSynthesis?.styleA || '',
+          project.styleSynthesis?.styleB || ''
+        );
+      }
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -123,8 +132,8 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
         tabIndex={0}
-        className="relative w-full aspect-video bg-secondary border-t border-border cursor-pointer group focus:outline-none focus:border-gold/50"
-        onClick={() => document.getElementById(`img-input-${type}`)?.click()}
+        className="relative w-full aspect-video bg-secondary border-t border-border cursor-pointer group focus:outline-none focus:border-gold/50 disabled:opacity-50"
+        onClick={() => !uploading && document.getElementById(`img-input-${type}`)?.click()}
       >
         <input
           id={`img-input-${type}`}
@@ -133,7 +142,11 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
           className="hidden"
           onChange={handleFileInput}
         />
-        {cardData.resultImage ? (
+        {uploading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-obsidian/50">
+            <div className="w-5 h-5 border-2 border-gold/30 border-t-gold rounded-full animate-spin"></div>
+          </div>
+        ) : cardData.resultImage ? (
           <img src={cardData.resultImage} alt={title} className="w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
