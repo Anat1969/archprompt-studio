@@ -164,8 +164,7 @@ const BOARD_CAMERA = {
   mood:      'atmospheric interior fragment, shallow depth, 85mm f/1.4',
 };
 
-const NO_PEOPLE = 'No people, no text, no frame divisions, no wide-angle distortion, no watermark.';
-const SUFFIX = '--ar 16:9 --v 6.1 --style raw';
+const COMPOSITION_RULES = 'Composition: rule of thirds, deep spatial layers, natural depth, clean architecture.';
 
 // ─── Prompt Builders ───────────────────────────────────────────────────────
 
@@ -180,7 +179,6 @@ export function generatePrompt(type, project) {
 
   const boardTypes = ['materials', 'colors', 'mood'];
   if (boardTypes.includes(type)) {
-    const cam = BOARD_CAMERA[type];
     const subjects = {
       materials: `Architectural material study board — ${mat}, ${pal}`,
       colors:    `Architectural color palette board — ${pal}, ${atmo}`,
@@ -191,11 +189,8 @@ export function generatePrompt(type, project) {
       synthesis ? `${synthesis.architect}, ${synthesis.tension}.` : '',
       synthesis ? `${synthesis.material}, ${synthesis.light}.` : '',
       light && `${light}, ${build.texture}.`,
-      `${cam}, ${CAMERA_BASE.settings}.`,
-      CAMERA_BASE.rules + '.',
       'Photorealistic architectural photography.',
-      SUFFIX,
-      NO_PEOPLE,
+      COMPOSITION_RULES,
     ];
     return parts.filter(Boolean).join(' ');
   }
@@ -214,10 +209,8 @@ export function generatePrompt(type, project) {
     synthesis ? synthesis.material + '.' : '',
     light && `${light}, ${build.scale}.`,
     cam && `${cam}, ${CAMERA_BASE.camera}, ${CAMERA_BASE.settings}.`,
-    CAMERA_BASE.rules + '.',
+    COMPOSITION_RULES,
     'Photorealistic architectural interior photography, magazine quality.',
-    SUFFIX,
-    NO_PEOPLE,
   ];
   return parts.filter(Boolean).join(' ');
 }
