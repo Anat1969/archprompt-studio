@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { generatePoeticDescription } from '../lib/promptEngine';
 
-const LS_KEY = 'architectureProjects';
+// All possible localStorage keys used across versions
+const LS_KEYS = ['architectureProjects', 'architecture_projects', 'projects'];
 const MIGRATED_FLAG = 'ls_migrated_v1';
 
 function toDB(project) {
@@ -19,31 +20,30 @@ function toDB(project) {
   };
 }
 
+function getProjectsFromLS() {
+  for (const key of LS_KEYS) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw);
+      const arr = Array.isArray(parsed) ? parsed : Object.values(parsed);
+      if (arr.length > 0) return arr;
+    } catch {
+      // continue
+    }
+  }
+  return [];
+}
+
 export function hasPendingMigration() {
   if (localStorage.getItem(MIGRATED_FLAG)) return false;
-  const raw = localStorage.getItem(LS_KEY);
-  if (!raw) return false;
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.length > 0 : Object.keys(parsed).length > 0;
-  } catch {
-    return false;
-  }
+  return getProjectsFromLS().length > 0;
 }
 
 export default function MigrateLocalStorage({ onDone }) {
   const [status, setStatus] = useState('idle'); // idle | running | done | error
   const [progress, setProgress] = useState({ current: 0, total: 0, name: '' });
   const [error, setError] = useState('');
-
-  function getProjectsFromLS() {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-    // Some versions stored as object keyed by id
-    return Object.values(parsed);
-  }
 
   async function runMigration() {
     setStatus('running');
@@ -70,9 +70,7 @@ export default function MigrateLocalStorage({ onDone }) {
     onDone();
   }
 
-  const lsProjects = (() => {
-    try { return getProjectsFromLS(); } catch { return []; }
-  })();
+  const lsProjects = getProjectsFromLS();
 
   return (
     <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center" dir="rtl">

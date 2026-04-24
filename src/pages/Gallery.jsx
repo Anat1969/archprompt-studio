@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { loadProjects, getProjectName } from '../lib/storage';
 import { getSynthesis, STYLES_LIST } from '../lib/promptEngine';
 import { motion } from 'framer-motion';
+import MigrateLocalStorage, { hasPendingMigration } from '../components/MigrateLocalStorage';
 
 function getDisplayName(project) {
   const { styleSynthesis } = project;
@@ -25,16 +26,25 @@ export default function Gallery() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading]   = useState(true);
+  const [showMigration, setShowMigration] = useState(() => hasPendingMigration());
+
+  function fetchProjects() {
+    setLoading(true);
+    loadProjects().then(all => { setProjects(all); setLoading(false); });
+  }
 
   useEffect(() => {
-    loadProjects().then(all => { setProjects(all); setLoading(false); });
-  }, []);
+    if (!showMigration) fetchProjects();
+  }, [showMigration]);
 
   const withImages = projects.filter(p => getHeroImage(p));
   const noImages   = projects.filter(p => !getHeroImage(p));
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
+      {showMigration && (
+        <MigrateLocalStorage onDone={() => setShowMigration(false)} />
+      )}
       <header className="border-b border-border px-8 py-6 flex items-center gap-6 sticky top-0 bg-background z-20">
         <button onClick={() => navigate('/projects')} className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors">
           ← פרויקטים
