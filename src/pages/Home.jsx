@@ -16,6 +16,10 @@ export default function Home() {
     navigate(`/work/${p.id}`);
   }
 
+  function handleBack() {
+    navigate('/');
+  }
+
   function handleOpen(id) {
     navigate(`/work/${id}`);
   }
@@ -39,6 +43,12 @@ export default function Home() {
           <p className="font-mono text-xs text-muted-foreground mt-1 tracking-wider">ARCHITECTURAL MIDJOURNEY GENERATOR</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleBack}
+            className="border border-border text-muted-foreground font-mono text-xs tracking-widest px-6 py-3 hover:border-gold hover:text-gold transition-all duration-200"
+          >
+            ← מדריך
+          </button>
           <button
             onClick={() => navigate('/gallery')}
             className="border border-border text-muted-foreground font-mono text-xs tracking-widest px-6 py-3 hover:border-gold hover:text-gold transition-all duration-200"

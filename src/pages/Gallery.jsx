@@ -15,7 +15,7 @@ export default function Gallery() {
       {/* Header */}
       <header className="border-b border-border px-8 py-6 flex items-center gap-6">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/projects')}
           className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors"
         >
           ← פרויקטים
