@@ -53,7 +53,7 @@ export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-obsidian text-foreground flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-background text-foreground flex flex-col" dir="rtl">
       {/* Hero */}
       <header className="border-b border-border px-8 py-10 flex flex-col items-center text-center gap-4">
         <p className="font-mono text-xs text-gold/60 tracking-[0.3em] uppercase">Architectural Midjourney Generator</p>

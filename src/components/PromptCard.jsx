@@ -97,10 +97,10 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
     <div className="border border-border bg-card flex flex-col gap-0 overflow-hidden">
       {/* Title bar */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-        <h3 className="font-display text-lg font-light tracking-wide text-gold">{title}</h3>
+        <h3 className="font-display text-xl font-semibold tracking-wide text-foreground">{title}</h3>
         <button
           onClick={handleGenerate}
-          className="font-mono text-xs tracking-wider border border-gold/50 text-gold/80 hover:border-gold hover:text-gold px-3 py-1 transition-all"
+          className="font-mono text-xs tracking-wider border border-gold text-gold hover:bg-gold hover:text-white px-3 py-1.5 transition-all"
         >
           הפק פרומפט
         </button>
@@ -112,7 +112,7 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
           value={cardData.prompt}
           onChange={(e) => handlePromptChange(e.target.value)}
           placeholder="הפרומפט יופיע כאן..."
-          className="w-full bg-transparent font-mono text-xs text-foreground/80 p-4 resize-none h-24 focus:outline-none placeholder:text-muted-foreground/40 leading-relaxed"
+          className="w-full bg-transparent font-mono text-sm text-foreground/80 p-4 resize-none h-28 focus:outline-none placeholder:text-muted-foreground/40 leading-relaxed"
           dir="ltr"
         />
         {cardData.prompt && (
@@ -132,7 +132,7 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
         tabIndex={0}
-        className="relative w-full aspect-video bg-secondary border-t border-border cursor-pointer group focus:outline-none focus:border-gold/50 disabled:opacity-50"
+        className="relative w-full aspect-video bg-muted border-t border-border cursor-pointer group focus:outline-none focus:border-gold/50 disabled:opacity-50"
         onClick={() => !uploading && document.getElementById(`img-input-${type}`)?.click()}
       >
         <input
@@ -143,7 +143,7 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
           onChange={handleFileInput}
         />
         {uploading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-obsidian/50">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
             <div className="w-5 h-5 border-2 border-gold/30 border-t-gold rounded-full animate-spin"></div>
           </div>
         ) : cardData.resultImage ? (

@@ -33,7 +33,7 @@ export default function WorkScreen() {
     const projects = loadProjects();
     const found = projects.find(p => p.id === id);
     if (found) setProject(found);
-    else navigate('/');
+    else navigate('/projects');
   }, [id]);
 
   function autoSave(partial) {
@@ -45,130 +45,161 @@ export default function WorkScreen() {
   }
 
   function handleSaveAndReturn() {
-    if (project) {
-      saveProject(project);
-    }
-    navigate('/');
+    if (project) saveProject(project);
+    navigate('/projects');
   }
 
   if (!project) return (
-    <div className="min-h-screen bg-obsidian flex items-center justify-center">
-      <span className="font-mono text-xs text-muted-foreground">טוען...</span>
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <span className="font-mono text-sm text-muted-foreground">טוען...</span>
     </div>
   );
 
   const displayName = getProjectName(project);
 
   return (
-    <div className="min-h-screen bg-obsidian">
+    <div className="min-h-screen bg-background text-foreground" dir="rtl">
       {/* Header */}
-      <header className="border-b border-border px-6 py-4 sticky top-0 bg-obsidian z-10 flex items-center gap-4">
-        <button onClick={handleSaveAndReturn} className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors">
+      <header className="border-b border-border px-6 py-4 sticky top-0 bg-background z-10 flex items-center gap-4 shadow-sm">
+        <button onClick={handleSaveAndReturn} className="font-mono text-sm text-muted-foreground hover:text-gold transition-colors">
           ← פרויקטים
         </button>
-        <div className="flex-1 flex items-center gap-2">
-          <span className="font-mono text-sm font-bold text-gold">#{String(project.number).padStart(2, '0')}</span>
+        <div className="flex-1 flex items-center gap-3">
+          <span className="font-mono text-base font-bold text-gold">#{String(project.number).padStart(2, '0')}</span>
           <input
             value={project.name}
             onChange={(e) => autoSave({ name: e.target.value })}
-            placeholder={displayName}
-            className="bg-transparent font-display text-2xl font-light text-foreground focus:outline-none focus:text-gold transition-colors placeholder:text-muted-foreground/40"
+            placeholder={displayName || 'שם הפרויקט...'}
+            className="bg-transparent font-display text-3xl font-light text-foreground focus:outline-none focus:text-gold transition-colors placeholder:text-muted-foreground/40 flex-1"
           />
         </div>
         <button
           onClick={handleSaveAndReturn}
-          className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors border border-border hover:border-gold/50 px-3 py-1.5"
+          className="font-mono text-sm text-muted-foreground hover:text-gold transition-colors border border-border hover:border-gold/50 px-4 py-2"
         >
           שמור וחזור
         </button>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col gap-10">
+      <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col gap-14">
 
-        {/* Inspiration */}
-        <Section title="תמונת השראה">
-          <InspirationUpload
-            image={project.inspirationImage}
-            onChange={(img) => autoSave({ inspirationImage: img })}
+        {/* ════════ חלק א׳: קלט ════════ */}
+        <div className="flex flex-col gap-10">
+          <SectionDivider
+            label="חלק א׳ — קלט"
+            desc="מלא את כל השדות הבאים. הם ישמשו כבסיס לבניית הפרומפטים האוטומטיים."
+            color="text-gold"
           />
-        </Section>
 
-        {/* Visual Description */}
-        <Section title="תיאור ויזואלי">
-          <VisualChips
-            visualDescription={project.visualDescription || {}}
-            onChange={(visualDescription) => autoSave({ visualDescription })}
+          {/* Inspiration */}
+          <Section
+            title="תמונת השראה"
+            hint="אופציונלי — אך מומלץ. תמונה שמייצגת את הכיוון האסתטי הכללי של הפרויקט. גרור, הדבק או בחר קובץ."
+          >
+            <InspirationUpload
+              image={project.inspirationImage}
+              onChange={(img) => autoSave({ inspirationImage: img })}
+            />
+          </Section>
+
+          {/* Style Synthesis */}
+          <Section
+            title="סינתזת סגנונות"
+            hint="בחר שניים מתוך 16 סגנונות עיצוביים. השילוב שלהם יקבע את ה'טון' של כל הפרומפטים. אפשר לבחור רק אחד אם רוצים."
+          >
+            <StyleSynthesisPanel project={project} onUpdate={autoSave} />
+          </Section>
+
+          {/* Visual Description */}
+          <Section
+            title="תיאור ויזואלי"
+            hint="בחר תגית אחת מכל קטגוריה. כולן אופציונליות — ככל שתמלא יותר, הפרומפט יהיה מדויק יותר."
+          >
+            <VisualChips
+              visualDescription={project.visualDescription || {}}
+              onChange={(visualDescription) => autoSave({ visualDescription })}
+            />
+          </Section>
+        </div>
+
+        {/* ════════ חלק ב׳: פלט ════════ */}
+        <div className="flex flex-col gap-10">
+          <SectionDivider
+            label="חלק ב׳ — פלט"
+            desc="9 מנועי פרומפט. לכל כרטיס — לחץ 'הפק פרומפט', העתק ל-Midjourney, הרץ ושמור את התמונה חזרה בכרטיס."
+            color="text-foreground"
           />
-        </Section>
 
-        {/* Style Synthesis */}
-        <Section title="סינתזת סגנונות">
-          <StyleSynthesisPanel
-            project={project}
-            onUpdate={autoSave}
-          />
-        </Section>
+          {/* Base Boards */}
+          <Section
+            title="לוחות בסיס — 3 מנועים"
+            hint="שלושה פרומפטים לייצור לוחות חזון: חומרים, צבעים ואווירה. אלו הבסיס הוויזואלי של הפרויקט."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {BOARDS.map(({ key, title }) => (
+                <PromptCard
+                  key={key}
+                  type={key}
+                  title={title}
+                  project={project}
+                  onUpdate={(section, updatedData) => {
+                    const updated = { ...project[section], [key]: updatedData };
+                    autoSave({ [section]: updated });
+                  }}
+                />
+              ))}
+            </div>
+          </Section>
 
-        {/* Base Boards */}
-        <Section title="לוחות בסיס (3 מנועים)">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {BOARDS.map(({ key, title }) => (
-              <PromptCard
-                key={key}
-                type={key}
-                title={title}
-                project={project}
-                onUpdate={(section, updatedData) => {
-                  const updated = { ...project[section], [key]: updatedData };
-                  autoSave({ [section]: updated });
-                }}
-              />
-            ))}
-          </div>
-        </Section>
+          {/* Rooms */}
+          <Section
+            title="חדרים — 4 מנועים"
+            hint="פרומפט לכל חדר, מותאם לזווית מצלמה ולפרופורציות המרחב. כל אחד עצמאי ומשתמש בקלט שנתת."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {ROOMS.map(({ key, title }) => (
+                <PromptCard
+                  key={key}
+                  type={key}
+                  title={title}
+                  project={project}
+                  onUpdate={(section, updatedData) => {
+                    const updated = { ...project[section], [key]: updatedData };
+                    autoSave({ [section]: updated });
+                  }}
+                />
+              ))}
+            </div>
+          </Section>
 
-        {/* Rooms */}
-        <Section title="חדרים (4 מנועים)">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {ROOMS.map(({ key, title }) => (
-              <PromptCard
-                key={key}
-                type={key}
-                title={title}
-                project={project}
-                onUpdate={(section, updatedData) => {
-                  const updated = { ...project[section], [key]: updatedData };
-                  autoSave({ [section]: updated });
-                }}
-              />
-            ))}
-          </div>
-        </Section>
-
-        {/* Building Types - Exterior */}
-        <Section title="חוץ מבנה (2 מנועים)">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {BUILDING_TYPES.map(({ key, title }) => (
-              <PromptCard
-                key={key}
-                type={key}
-                title={title}
-                project={project}
-                onUpdate={(section, updatedData) => {
-                  const updated = { ...project[section], [key]: updatedData };
-                  autoSave({ [section]: updated });
-                }}
-                isBuildingType={true}
-              />
-            ))}
-          </div>
-        </Section>
+          {/* Building Exterior */}
+          <Section
+            title="חזית מבנה — 2 מנועים"
+            hint="פרומפטים לחזית חיצונית. בית פרטי לעומת בניין — פרופורציות ומצלמה שונות לכל אחד."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {BUILDING_TYPES.map(({ key, title }) => (
+                <PromptCard
+                  key={key}
+                  type={key}
+                  title={title}
+                  project={project}
+                  onUpdate={(section, updatedData) => {
+                    const updated = { ...project[section], [key]: updatedData };
+                    autoSave({ [section]: updated });
+                  }}
+                  isBuildingType={true}
+                />
+              ))}
+            </div>
+          </Section>
+        </div>
 
         {/* Save Button */}
         <div className="flex justify-center pb-10">
           <button
             onClick={handleSaveAndReturn}
-            className="font-mono text-xs tracking-widest px-12 py-4 border border-gold/50 text-gold hover:border-gold hover:bg-gold/5 transition-all"
+            className="font-mono text-sm tracking-widest px-12 py-4 border border-gold text-gold hover:bg-gold hover:text-white transition-all"
           >
             שמור וחזור לרשימה
           </button>
@@ -178,12 +209,23 @@ export default function WorkScreen() {
   );
 }
 
-function Section({ title, children }) {
+function SectionDivider({ label, desc, color }) {
   return (
-    <section>
-      <h2 className="font-display text-2xl font-light text-foreground mb-4 pb-2 border-b border-border/50 tracking-wide">
-        {title}
-      </h2>
+    <div className="border-2 border-gold/30 bg-gold/5 px-6 py-5 rounded-sm">
+      <p className={`font-display text-3xl font-semibold tracking-wide mb-1 ${color}`}>{label}</p>
+      <p className="font-mono text-sm text-muted-foreground leading-relaxed">{desc}</p>
+    </div>
+  );
+}
+
+function Section({ title, hint, children }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div>
+        <h2 className="font-display text-2xl font-semibold text-foreground tracking-wide">{title}</h2>
+        {hint && <p className="font-mono text-sm text-muted-foreground mt-1 leading-relaxed">{hint}</p>}
+        <div className="mt-2 border-b border-border/60" />
+      </div>
       {children}
     </section>
   );
@@ -200,25 +242,25 @@ function StyleSynthesisPanel({ project, onUpdate }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-4 flex-wrap">
-        <div className="flex flex-col gap-1 flex-1 min-w-48">
-          <label className="font-mono text-xs text-muted-foreground tracking-widest">סגנון A</label>
+        <div className="flex flex-col gap-2 flex-1 min-w-64">
+          <label className="font-mono text-sm font-medium text-foreground">סגנון ראשי (A)</label>
           <select
             value={project.styleSynthesis?.styleA || ''}
             onChange={(e) => handleStyleChange('styleA', e.target.value)}
-            className="bg-secondary border border-border text-foreground font-mono text-xs px-3 py-2 focus:outline-none focus:border-gold/50"
-            dir="ltr"
+            className="bg-card border border-border text-foreground font-mono text-sm px-3 py-2.5 focus:outline-none focus:border-gold/70 rounded-sm"
+            dir="rtl"
           >
             <option value="">— בחר סגנון —</option>
             {STYLES_LIST.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </div>
-        <div className="flex flex-col gap-1 flex-1 min-w-48">
-          <label className="font-mono text-xs text-muted-foreground tracking-widest">סגנון B</label>
+        <div className="flex flex-col gap-2 flex-1 min-w-64">
+          <label className="font-mono text-sm font-medium text-foreground">סגנון משני (B) — אופציונלי</label>
           <select
             value={project.styleSynthesis?.styleB || ''}
             onChange={(e) => handleStyleChange('styleB', e.target.value)}
-            className="bg-secondary border border-border text-foreground font-mono text-xs px-3 py-2 focus:outline-none focus:border-gold/50"
-            dir="ltr"
+            className="bg-card border border-border text-foreground font-mono text-sm px-3 py-2.5 focus:outline-none focus:border-gold/70 rounded-sm"
+            dir="rtl"
           >
             <option value="">— בחר סגנון —</option>
             {STYLES_LIST.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
@@ -226,8 +268,9 @@ function StyleSynthesisPanel({ project, onUpdate }) {
         </div>
       </div>
       {synthesis && (
-        <div className="border border-gold/20 bg-gold/5 px-4 py-3">
-          <p className="font-mono text-xs text-gold/80 leading-relaxed italic" dir="ltr">
+        <div className="border border-gold/30 bg-gold/5 px-5 py-4 rounded-sm">
+          <p className="font-mono text-xs text-muted-foreground mb-1 uppercase tracking-widest">סינתזה שנוצרה</p>
+          <p className="font-mono text-sm text-gold leading-relaxed" dir="ltr">
             {synthesis.token} — {synthesis.tension}
           </p>
         </div>

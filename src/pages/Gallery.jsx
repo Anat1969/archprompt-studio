@@ -11,7 +11,7 @@ export default function Gallery() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-obsidian">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border px-8 py-6 flex items-center gap-6">
         <button
