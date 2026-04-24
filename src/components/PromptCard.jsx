@@ -86,12 +86,22 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
       {/* Title bar */}
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <h3 className="font-display text-xl font-semibold tracking-wide text-foreground">{title}</h3>
-        <button
-          onClick={handleGenerate}
-          className="font-mono text-xs tracking-wider border border-gold text-gold hover:bg-gold hover:text-white px-3 py-1.5 transition-all"
-        >
-          הפק פרומפט
-        </button>
+        <div className="flex items-center gap-2">
+          {cardData.prompt && (
+            <button
+              onClick={handleCopy}
+              className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors px-2 py-1.5 border border-border hover:border-gold/50"
+            >
+              {copied ? 'הועתק' : 'העתק'}
+            </button>
+          )}
+          <button
+            onClick={handleGenerate}
+            className="font-mono text-xs tracking-wider border border-gold text-gold hover:bg-gold hover:text-white px-3 py-1.5 transition-all"
+          >
+            הפק פרומפט
+          </button>
+        </div>
       </div>
 
       {/* Prompt textarea */}
@@ -103,14 +113,6 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
           className="w-full bg-transparent font-mono text-sm text-foreground/80 p-4 resize-none h-28 focus:outline-none placeholder:text-muted-foreground/40 leading-relaxed"
           dir="ltr"
         />
-        {cardData.prompt && (
-          <button
-            onClick={handleCopy}
-            className="absolute bottom-2 left-2 font-mono text-xs text-muted-foreground hover:text-gold transition-colors px-2 py-1 border border-border hover:border-gold/50"
-          >
-            {copied ? 'הועתק' : 'העתק'}
-          </button>
-        )}
       </div>
 
       {/* 16:9 image area */}
