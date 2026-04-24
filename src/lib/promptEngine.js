@@ -198,20 +198,53 @@ export function generatePrompt(type, project) {
 
   const boardTypes = ['materials', 'colors', 'mood'];
   if (boardTypes.includes(type)) {
-    const subjects = {
-      materials: `Architectural material study board — ${mat}, ${pal}`,
-      colors:    `Architectural color palette board — ${pal}, ${atmo}`,
-      mood:      `Architectural mood inspiration board — ${atmo}, ${synthesis?.token || ''}`,
-    };
-    const parts = [
-      subjects[type] + '.',
-      synthesis ? `${synthesis.architect}, ${synthesis.tension}.` : '',
-      synthesis ? `${synthesis.material}, ${synthesis.light}.` : '',
-      light && `${light}, ${build.texture}.`,
-      'Photorealistic architectural photography.',
-      COMPOSITION_RULES,
-    ];
-    return parts.filter(Boolean).join(' ');
+
+    // ── לוח חומרים: flat-lay טקסטורות, מרקם פיזי, אין חלל ── 
+    if (type === 'materials') {
+      const parts = [
+        `Architectural material sample board, close-up flat-lay overhead 90°.`,
+        mat ? `Hero material: ${mat}.` : '',
+        synthesis ? `Material palette: ${synthesis.material}.` : '',
+        pal ? `Color tendency: ${pal}.` : '',
+        `Tactile surface study — visible grain, texture, imperfection, veining, weave.`,
+        `No room context, no furniture, no human presence. Pure material abstraction.`,
+        `Shot on Phase One IQ4 150MP, 100mm Macro, f/11, studio diffused light, zero shadows.`,
+        `Editorial material photography, Dezeen magazine quality, ultra sharp.`,
+      ];
+      return parts.filter(Boolean).join(' ');
+    }
+
+    // ── לוח צבעים: שדות צבע אדריכליים טהורים, ללא טקסטורה ──
+    if (type === 'colors') {
+      const parts = [
+        `Architectural color field study board — pure tonal composition.`,
+        pal ? `Dominant palette: ${pal}.` : '',
+        synthesis ? `Color sensibility derived from: ${synthesis.token}.` : '',
+        atmo ? `Atmosphere tone: ${atmo}.` : '',
+        light ? `Light behavior: ${light}.` : '',
+        `Abstract architectural color arrangement — painted plaster, washed wall surfaces, color blocking.`,
+        `No textures, no furniture, no people. Flat color planes with subtle light graduation.`,
+        `Shot on Hasselblad X2D, 60mm, f/5.6, soft box, no harsh shadows.`,
+        `Color theory composition, Swiss typographic precision, Architectural Digest color editorial.`,
+      ];
+      return parts.filter(Boolean).join(' ');
+    }
+
+    // ── לוח מוד: אווירה וחלל, תמונת השראה קינמטית ──
+    if (type === 'mood') {
+      const parts = [
+        `Cinematic architectural mood board — spatial atmosphere, human scale, emotional resonance.`,
+        synthesis ? `Design narrative: ${synthesis.token}, ${synthesis.tension}.` : '',
+        atmo ? `Spatial feeling: ${atmo}.` : '',
+        light ? `Lighting condition: ${light}.` : '',
+        synthesis ? `Architect reference: ${synthesis.architect}.` : '',
+        `Evocative interior fragment — depth, shadow, mystery, lived-in quality.`,
+        `Shallow depth of field, leading lines, atmospheric haze allowed. People silhouettes or traces of habitation acceptable.`,
+        `Shot on Leica SL3, 50mm Summilux f/1.4, available light only.`,
+        `Cinematic architectural photography, Wallpaper* magazine mood editorial.`,
+      ];
+      return parts.filter(Boolean).join(' ');
+    }
   }
 
   const roomNames = {
