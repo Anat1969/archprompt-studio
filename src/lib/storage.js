@@ -1,4 +1,4 @@
-import { STYLES_LIST } from './promptEngine';
+import { STYLES_LIST, generatePoeticDescription } from './promptEngine';
 
 const GALLERY_KEY = 'promptStudio_gallery';
 const CURRENT_KEY = 'promptStudio_current';
@@ -14,7 +14,8 @@ export function loadProjects() {
 }
 
 export function saveProject(project) {
-  const updated = { ...project, updatedAt: Date.now() };
+  const poeticDescription = generatePoeticDescription(project);
+  const updated = { ...project, updatedAt: Date.now(), poeticDescription };
   // Strip images before saving (too large for localStorage)
   const cleaned = stripImages(updated);
   // Save as current

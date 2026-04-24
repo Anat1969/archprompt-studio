@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadProjects, createProject, saveProject, deleteProject, getProjectName } from '../lib/storage';
+import { generatePoeticDescription } from '../lib/promptEngine';
 
 export default function Home() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
+    const all = loadProjects();
+    // Backfill poetic descriptions for existing projects that don't have one
+    const needsUpdate = all.filter(p => !p.poeticDescription && generatePoeticDescription(p));
+    needsUpdate.forEach(p => saveProject(p));
     setProjects(loadProjects());
   }, []);
 
@@ -87,7 +92,10 @@ export default function Home() {
                       <div className="font-mono text-lg font-bold text-gold min-w-12">#{String(p.number).padStart(2, '0')}</div>
                       <div className="flex-1">
                         <p className="font-display text-lg font-light text-foreground group-hover:text-gold transition-colors">{displayName}</p>
-                        <p className="font-mono text-xs text-muted-foreground mt-1">{formatDate(p.updatedAt)}</p>
+                        {p.poeticDescription && (
+                          <p className="font-mono text-xs text-muted-foreground/70 mt-1.5 leading-relaxed italic" dir="rtl">{p.poeticDescription}</p>
+                        )}
+                        <p className="font-mono text-xs text-muted-foreground/40 mt-1">{formatDate(p.updatedAt)}</p>
                       </div>
                     </div>
                     <button

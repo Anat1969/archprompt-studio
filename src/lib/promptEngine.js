@@ -273,6 +273,61 @@ export function synthesizeStyles(styleA, styleB) {
   return s?.token || '';
 }
 
+// ─── Poetic Project Description ────────────────────────────────────────────
+
+const ATMOSPHERE_POETIC = {
+  minimalist: 'שתיקה מכוונת שבה הריק מדבר',
+  organic:    'עקומות חיות שמפשרות בין בית לטבע',
+  industrial: 'יושר גלמי של חומרים שלא מתנצלים',
+  luxury:     'פאר שלא צועק אלא לוחש',
+};
+
+const PALETTE_POETIC = {
+  warm:       'מרחב שמחמם מבפנים',
+  cool:       'קרירות שמשרה צלילות',
+  neutral:    'ניטרליות כקנבס לחיים',
+  contrasted: 'ניגודים חדים שמחדדים את ההרגשה',
+};
+
+const MATERIAL_POETIC = {
+  concrete: 'בטון שזוכר את הצורה שנולד בה',
+  wood:     'עץ שמספר את שנות גדילתו',
+  metal:    'מתכת שמשקפת ומשנה',
+  stone:    'אבן שמחברת לארץ',
+  glass:    'שקיפות שמטשטשת גבולות',
+  mixed:    'שכבות חומר שמגוללות סיפור',
+};
+
+const LIGHT_POETIC = {
+  'soft-diffused':   'באור שאינו יודע כיצד להטיל צל',
+  'dramatic-direct': 'באור שחותך חלל כמו כוונה',
+  'natural-gentle':  'באור שמגיע כמו אורח',
+};
+
+export function generatePoeticDescription(project) {
+  const { visualDescription = {}, styleSynthesis = {} } = project;
+  const synthesis = getSynthesis(styleSynthesis.styleA, styleSynthesis.styleB);
+
+  const parts = [];
+
+  if (synthesis) {
+    parts.push(synthesis.tension + '.');
+  }
+
+  const atmoPoetic = ATMOSPHERE_POETIC[visualDescription.atmosphere];
+  const palPoetic  = PALETTE_POETIC[visualDescription.palette];
+  const matPoetic  = MATERIAL_POETIC[visualDescription.materials];
+  const lightPoetic = LIGHT_POETIC[visualDescription.light];
+
+  if (matPoetic) parts.push(matPoetic);
+  if (lightPoetic) parts.push(lightPoetic);
+  if (palPoetic) parts.push(palPoetic);
+  if (atmoPoetic) parts.push(atmoPoetic);
+
+  if (parts.length === 0) return '';
+  return parts.join(' — ');
+}
+
 // ─── UI Metadata ───────────────────────────────────────────────────────────
 
 export const VISUAL_OPTIONS = {
