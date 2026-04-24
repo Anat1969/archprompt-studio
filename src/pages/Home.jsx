@@ -1,38 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadProjects, createProject, saveProject, deleteProject, getProjectName } from '../lib/storage';
-import { generatePoeticDescription } from '../lib/promptEngine';
 
 export default function Home() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const all = loadProjects();
-    // Backfill poetic descriptions for existing projects that don't have one
-    const needsUpdate = all.filter(p => !p.poeticDescription && generatePoeticDescription(p));
-    needsUpdate.forEach(p => saveProject(p));
-    setProjects(loadProjects());
+    loadProjects().then(p => { setProjects(p); setLoading(false); });
   }, []);
 
-  function handleNew() {
+  async function handleNew() {
     const p = createProject();
-    saveProject(p);
-    navigate(`/work/${p.id}`);
+    const saved = await saveProject(p);
+    navigate(`/work/${saved.id}`);
   }
 
-  function handleBack() {
-    navigate('/');
-  }
-
-  function handleOpen(id) {
-    navigate(`/work/${id}`);
-  }
-
-  function handleDelete(e, id) {
+  async function handleDelete(e, id) {
     e.stopPropagation();
-    deleteProject(id);
-    setProjects(loadProjects());
+    await deleteProject(id);
+    setProjects(prev => prev.filter(p => p.id !== id));
   }
 
   function formatDate(ts) {
@@ -49,7 +37,7 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={handleBack}
+            onClick={() => navigate('/')}
             className="border border-border text-muted-foreground font-mono text-xs tracking-widest px-6 py-3 hover:border-gold hover:text-gold transition-all duration-200"
           >
             ← מדריך
@@ -58,11 +46,11 @@ export default function Home() {
             onClick={() => navigate('/gallery')}
             className="border border-border text-muted-foreground font-mono text-xs tracking-widest px-6 py-3 hover:border-gold hover:text-gold transition-all duration-200"
           >
-            גלריה
+            מגזין
           </button>
           <button
             onClick={handleNew}
-            className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-obsidian transition-all duration-200"
+            className="border border-gold text-gold font-mono text-xs tracking-widest px-6 py-3 hover:bg-gold hover:text-white transition-all duration-200"
           >
             + פרויקט חדש
           </button>
@@ -71,7 +59,11 @@ export default function Home() {
 
       {/* Content */}
       <main className="flex-1 px-8 py-10">
-        {projects.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+          </div>
+        ) : projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <p className="font-display text-3xl font-light text-muted-foreground mb-4">אין פרויקטים עדיין</p>
             <p className="font-mono text-xs text-muted-foreground">לחץ על "פרויקט חדש" כדי להתחיל</p>
@@ -85,7 +77,7 @@ export default function Home() {
                 return (
                   <div
                     key={p.id}
-                    onClick={() => handleOpen(p.id)}
+                    onClick={() => navigate(`/work/${p.id}`)}
                     className="border border-border bg-card hover:border-gold cursor-pointer transition-all duration-200 group p-4 flex items-center justify-between"
                   >
                     <div className="flex items-start gap-4 flex-1">

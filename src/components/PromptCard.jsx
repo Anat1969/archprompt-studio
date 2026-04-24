@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { generatePrompt } from '../lib/promptEngine';
-import { addImageToGallery } from '../lib/storage';
+
 
 const SECTION_MAP = {
   materials: 'boards',
@@ -44,15 +44,6 @@ export default function PromptCard({ type, title, project, onUpdate, isBuildingT
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const updated = { ...cardData, resultImage: file_url, status: 'filled' };
       onUpdate(section, updated);
-      if (project.id) {
-        addImageToGallery(
-          file_url,
-          project.id,
-          project.name || `פרויקט ${project.number}`,
-          project.styleSynthesis?.styleA || '',
-          project.styleSynthesis?.styleB || ''
-        );
-      }
     } finally {
       setUploading(false);
     }

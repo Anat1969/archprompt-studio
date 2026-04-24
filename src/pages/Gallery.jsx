@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loadProjects } from '../lib/storage';
+import { loadProjects, getProjectName } from '../lib/storage';
 import { getSynthesis, STYLES_LIST } from '../lib/promptEngine';
 import { motion } from 'framer-motion';
 
@@ -21,24 +21,20 @@ function getHeroImage(project) {
   return all.find(v => v?.resultImage)?.resultImage || null;
 }
 
-function hasImages(project) {
-  return getHeroImage(project) !== null;
-}
-
 export default function Gallery() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    setProjects(loadProjects());
+    loadProjects().then(all => { setProjects(all); setLoading(false); });
   }, []);
 
-  const withImages = projects.filter(hasImages);
-  const noImages   = projects.filter(p => !hasImages(p));
+  const withImages = projects.filter(p => getHeroImage(p));
+  const noImages   = projects.filter(p => !getHeroImage(p));
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
       <header className="border-b border-border px-8 py-6 flex items-center gap-6 sticky top-0 bg-background z-20">
         <button onClick={() => navigate('/projects')} className="font-mono text-xs text-muted-foreground hover:text-gold transition-colors">
           ← פרויקטים
@@ -50,20 +46,22 @@ export default function Gallery() {
       </header>
 
       <main className="max-w-5xl mx-auto px-8 py-14">
-        {projects.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+          </div>
+        ) : projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <p className="font-display text-3xl font-light text-muted-foreground mb-3">אין פרויקטים עדיין</p>
             <p className="font-mono text-xs text-muted-foreground">צור פרויקטים ועלה תמונות כדי לראות את המגזין</p>
           </div>
         ) : (
           <div className="flex flex-col">
-            {/* Index header */}
             <div className="flex items-baseline justify-between border-b-2 border-foreground pb-3 mb-10">
               <span className="font-display text-2xl font-light tracking-widest text-foreground">תוכן עניינים</span>
               <span className="font-mono text-xs text-muted-foreground">{new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long' })}</span>
             </div>
 
-            {/* Projects with images */}
             <div className="flex flex-col divide-y divide-border">
               {withImages.map((project, idx) => {
                 const synthesis = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
@@ -78,12 +76,9 @@ export default function Gallery() {
                     onClick={() => navigate(`/magazine/${project.id}`)}
                     className="group grid grid-cols-12 gap-6 py-8 cursor-pointer hover:bg-secondary/30 transition-colors px-4 -mx-4"
                   >
-                    {/* Number */}
                     <div className="col-span-1 flex items-start pt-1">
                       <span className="font-mono text-xs text-gold font-bold">#{String(project.number).padStart(2, '0')}</span>
                     </div>
-
-                    {/* Main text */}
                     <div className="col-span-7 flex flex-col gap-2">
                       <h2 className="font-display text-2xl font-light text-foreground group-hover:text-gold transition-colors leading-tight">{name}</h2>
                       {synthesis && (
@@ -93,16 +88,12 @@ export default function Gallery() {
                         <p className="font-mono text-xs text-muted-foreground/60 italic leading-relaxed mt-1">{project.poeticDescription}</p>
                       )}
                     </div>
-
-                    {/* Dotted leader */}
                     <div className="col-span-2 flex items-center">
                       <div className="w-full border-b border-dotted border-border/60 mb-1" />
                     </div>
-
-                    {/* Thumb */}
                     <div className="col-span-2 flex items-center justify-end">
                       <div className="w-20 h-14 overflow-hidden border border-border group-hover:border-gold/50 transition-colors">
-                        <img src={hero} alt={name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity group-hover:scale-105 transition-transform duration-300" />
+                        <img src={hero} alt={name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300" />
                       </div>
                     </div>
                   </motion.div>
@@ -110,7 +101,6 @@ export default function Gallery() {
               })}
             </div>
 
-            {/* Projects without images */}
             {noImages.length > 0 && (
               <div className="mt-12 border-t border-border/40 pt-8">
                 <p className="font-mono text-xs text-muted-foreground/50 uppercase tracking-widest mb-4">פרויקטים ללא תמונות</p>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { loadProjects, saveProject, getProjectName } from '../lib/storage';
 import { STYLES_LIST, generatePrompt, getSynthesis } from '../lib/promptEngine';
@@ -11,14 +11,12 @@ const BOARDS = [
   { key: 'colors',    title: 'לוח צבעים' },
   { key: 'mood',      title: 'לוח השראה' },
 ];
-
 const ROOMS = [
   { key: 'living',   title: 'סלון' },
   { key: 'kitchen',  title: 'מטבח' },
   { key: 'bedroom',  title: 'חדר שינה' },
   { key: 'bathroom', title: 'חדר רחצה' },
 ];
-
 const BUILDING_TYPES = [
   { key: 'private',  title: 'בית פרטי — חוץ' },
   { key: 'building', title: 'בניין — חוץ' },
@@ -28,30 +26,42 @@ export default function WorkScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const saveTimer = useRef(null);
 
   useEffect(() => {
-    const projects = loadProjects();
-    const found = projects.find(p => p.id === id);
-    if (found) setProject(found);
-    else navigate('/projects');
+    loadProjects().then(projects => {
+      const found = projects.find(p => p.id === id);
+      if (found) setProject(found);
+      else navigate('/projects');
+    });
   }, [id]);
 
+  // Auto-save with debounce
   function autoSave(partial) {
     setProject(prev => {
       const updated = { ...prev, ...partial };
-      saveProject(updated);
+      // Debounce cloud save
+      clearTimeout(saveTimer.current);
+      setSaving(true);
+      saveTimer.current = setTimeout(() => {
+        saveProject(updated).then(() => setSaving(false));
+      }, 800);
       return updated;
     });
   }
 
-  function handleSaveAndReturn() {
-    if (project) saveProject(project);
+  async function handleSaveAndReturn() {
+    if (project) {
+      clearTimeout(saveTimer.current);
+      await saveProject(project);
+    }
     navigate('/projects');
   }
 
   if (!project) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <span className="font-mono text-sm text-muted-foreground">טוען...</span>
+      <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
     </div>
   );
 
@@ -73,12 +83,15 @@ export default function WorkScreen() {
             className="bg-transparent font-display text-3xl font-light text-foreground focus:outline-none focus:text-gold transition-colors placeholder:text-muted-foreground/40 flex-1"
           />
         </div>
-        <button
-          onClick={handleSaveAndReturn}
-          className="font-mono text-sm text-muted-foreground hover:text-gold transition-colors border border-border hover:border-gold/50 px-4 py-2"
-        >
-          שמור וחזור
-        </button>
+        <div className="flex items-center gap-3">
+          {saving && <span className="font-mono text-xs text-muted-foreground/40 animate-pulse">שומר...</span>}
+          <button
+            onClick={handleSaveAndReturn}
+            className="font-mono text-sm text-muted-foreground hover:text-gold transition-colors border border-border hover:border-gold/50 px-4 py-2"
+          >
+            שמור וחזור
+          </button>
+        </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col gap-14">
@@ -90,31 +103,16 @@ export default function WorkScreen() {
             desc="מלא את כל השדות הבאים. הם ישמשו כבסיס לבניית הפרומפטים האוטומטיים."
             color="text-gold"
           />
-
-          {/* Inspiration */}
-          <Section
-            title="תמונת השראה"
-            hint="אופציונלי — אך מומלץ. תמונה שמייצגת את הכיוון האסתטי הכללי של הפרויקט. גרור, הדבק או בחר קובץ."
-          >
+          <Section title="תמונת השראה" hint="אופציונלי — תמונה שמייצגת את הכיוון האסתטי הכללי. גרור, הדבק או בחר קובץ.">
             <InspirationUpload
               image={project.inspirationImage}
               onChange={(img) => autoSave({ inspirationImage: img })}
             />
           </Section>
-
-          {/* Style Synthesis */}
-          <Section
-            title="סינתזת סגנונות"
-            hint="בחר שניים מתוך 16 סגנונות עיצוביים. השילוב שלהם יקבע את ה'טון' של כל הפרומפטים. אפשר לבחור רק אחד אם רוצים."
-          >
+          <Section title="סינתזת סגנונות" hint="בחר שניים מתוך 16 סגנונות עיצוביים. אפשר לבחור רק אחד.">
             <StyleSynthesisPanel project={project} onUpdate={autoSave} />
           </Section>
-
-          {/* Visual Description */}
-          <Section
-            title="תיאור ויזואלי"
-            hint="בחר תגית אחת מכל קטגוריה. כולן אופציונליות — ככל שתמלא יותר, הפרומפט יהיה מדויק יותר."
-          >
+          <Section title="תיאור ויזואלי" hint="בחר תגית אחת מכל קטגוריה. ככל שתמלא יותר, הפרומפט יהיה מדויק יותר.">
             <VisualChips
               visualDescription={project.visualDescription || {}}
               onChange={(visualDescription) => autoSave({ visualDescription })}
@@ -126,15 +124,10 @@ export default function WorkScreen() {
         <div className="flex flex-col gap-10">
           <SectionDivider
             label="חלק ב׳ — פלט"
-            desc="9 מנועי פרומפט. לכל כרטיס — לחץ 'הפק פרומפט', העתק ל-Midjourney, הרץ ושמור את התמונה חזרה בכרטיס."
+            desc="9 מנועי פרומפט. לכל כרטיס — לחץ 'הפק פרומפט', העתק ל-Midjourney, הרץ ושמור את התמונה."
             color="text-foreground"
           />
-
-          {/* Base Boards */}
-          <Section
-            title="לוחות בסיס — 3 מנועים"
-            hint="שלושה פרומפטים לייצור לוחות חזון: חומרים, צבעים ואווירה. אלו הבסיס הוויזואלי של הפרויקט."
-          >
+          <Section title="לוחות בסיס — 3 מנועים" hint="לוחות חזון: חומרים, צבעים ואווירה.">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {BOARDS.map(({ key, title }) => (
                 <PromptCard
@@ -143,19 +136,13 @@ export default function WorkScreen() {
                   title={title}
                   project={project}
                   onUpdate={(section, updatedData) => {
-                    const updated = { ...project[section], [key]: updatedData };
-                    autoSave({ [section]: updated });
+                    autoSave({ [section]: { ...project[section], [key]: updatedData } });
                   }}
                 />
               ))}
             </div>
           </Section>
-
-          {/* Rooms */}
-          <Section
-            title="חדרים — 4 מנועים"
-            hint="פרומפט לכל חדר, מותאם לזווית מצלמה ולפרופורציות המרחב. כל אחד עצמאי ומשתמש בקלט שנתת."
-          >
+          <Section title="חדרים — 4 מנועים" hint="פרומפט לכל חדר, מותאם לזווית מצלמה ולפרופורציות המרחב.">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {ROOMS.map(({ key, title }) => (
                 <PromptCard
@@ -164,19 +151,13 @@ export default function WorkScreen() {
                   title={title}
                   project={project}
                   onUpdate={(section, updatedData) => {
-                    const updated = { ...project[section], [key]: updatedData };
-                    autoSave({ [section]: updated });
+                    autoSave({ [section]: { ...project[section], [key]: updatedData } });
                   }}
                 />
               ))}
             </div>
           </Section>
-
-          {/* Building Exterior */}
-          <Section
-            title="חזית מבנה — 2 מנועים"
-            hint="פרומפטים לחזית חיצונית. בית פרטי לעומת בניין — פרופורציות ומצלמה שונות לכל אחד."
-          >
+          <Section title="חזית מבנה — 2 מנועים" hint="פרומפטים לחזית חיצונית.">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {BUILDING_TYPES.map(({ key, title }) => (
                 <PromptCard
@@ -185,8 +166,7 @@ export default function WorkScreen() {
                   title={title}
                   project={project}
                   onUpdate={(section, updatedData) => {
-                    const updated = { ...project[section], [key]: updatedData };
-                    autoSave({ [section]: updated });
+                    autoSave({ [section]: { ...project[section], [key]: updatedData } });
                   }}
                   isBuildingType={true}
                 />
@@ -195,7 +175,6 @@ export default function WorkScreen() {
           </Section>
         </div>
 
-        {/* Save Button */}
         <div className="flex justify-center pb-10">
           <button
             onClick={handleSaveAndReturn}
@@ -233,12 +212,9 @@ function Section({ title, hint, children }) {
 
 function StyleSynthesisPanel({ project, onUpdate }) {
   const synthesis = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
-
   function handleStyleChange(field, value) {
-    const updated = { ...project.styleSynthesis, [field]: value };
-    onUpdate({ styleSynthesis: updated });
+    onUpdate({ styleSynthesis: { ...project.styleSynthesis, [field]: value } });
   }
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-4 flex-wrap">

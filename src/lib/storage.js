@@ -1,112 +1,76 @@
+import { base44 } from '@/api/base44Client';
 import { STYLES_LIST, generatePoeticDescription } from './promptEngine';
 
-const GALLERY_KEY = 'promptStudio_gallery';
-const CURRENT_KEY = 'promptStudio_current';
-const IMAGES_GALLERY_KEY = 'promptStudio_images';
-
-export function loadProjects() {
-  try {
-    const gallery = JSON.parse(localStorage.getItem(GALLERY_KEY) || '{"projects":[]}');
-    return gallery.projects || [];
-  } catch {
-    return [];
-  }
+// ─── Normalize: DB record → internal project shape ────────────────────────────
+function fromDB(record) {
+  return {
+    id:                  record.id,
+    name:                record.name || '',
+    number:              record.number || 0,
+    poeticDescription:   record.poetic_description || '',
+    inspirationImage:    record.inspiration_image || null,
+    createdAt:           new Date(record.created_date).getTime(),
+    updatedAt:           new Date(record.updated_date).getTime(),
+    styleSynthesis:      record.style_synthesis      || { styleA: '', styleB: '' },
+    visualDescription:   record.visual_description   || { materials: '', palette: '', light: '', atmosphere: '' },
+    boards:              record.boards               || { materials: { prompt: '', resultImage: null }, colors: { prompt: '', resultImage: null }, mood: { prompt: '', resultImage: null } },
+    rooms:               record.rooms                || { living: { prompt: '', resultImage: null }, kitchen: { prompt: '', resultImage: null }, bedroom: { prompt: '', resultImage: null }, bathroom: { prompt: '', resultImage: null } },
+    buildingTypes:       record.building_types       || { private: { prompt: '', resultImage: null }, building: { prompt: '', resultImage: null } },
+  };
 }
 
-export function saveProject(project) {
-  const poeticDescription = generatePoeticDescription(project);
-  const updated = { ...project, updatedAt: Date.now(), poeticDescription };
-  // Strip images before saving (too large for localStorage)
-  const cleaned = stripImages(updated);
-  // Save as current
-  localStorage.setItem(CURRENT_KEY, JSON.stringify(cleaned));
-  // Save to gallery
-  const projects = loadProjects();
-  const idx = projects.findIndex(p => p.id === project.id);
-  if (idx >= 0) {
-    projects[idx] = cleaned;
+// ─── Normalize: internal project → DB record ─────────────────────────────────
+function toDB(project) {
+  return {
+    name:               project.name || '',
+    number:             project.number || 0,
+    poetic_description: generatePoeticDescription(project),
+    inspiration_image:  project.inspirationImage || null,
+    style_synthesis:    project.styleSynthesis    || {},
+    visual_description: project.visualDescription || {},
+    boards:             project.boards            || {},
+    rooms:              project.rooms             || {},
+    building_types:     project.buildingTypes     || {},
+  };
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+export async function loadProjects() {
+  const records = await base44.entities.Project.list('-updated_date', 100);
+  return records.map(fromDB);
+}
+
+export async function saveProject(project) {
+  const data = toDB(project);
+  if (project._isNew) {
+    // Assign sequential number based on existing count
+    const existing = await base44.entities.Project.list('-updated_date', 100);
+    data.number = existing.length + 1;
+    const created = await base44.entities.Project.create(data);
+    return fromDB(created);
   } else {
-    // New project: assign sequential number
-    cleaned.number = projects.length + 1;
-    projects.unshift(cleaned);
+    const updated = await base44.entities.Project.update(project.id, data);
+    return fromDB(updated);
   }
-  projects.sort((a, b) => b.updatedAt - a.updatedAt);
-  localStorage.setItem(GALLERY_KEY, JSON.stringify({ projects }));
-  return updated;
 }
 
-function stripImages(project) {
-  const copy = { ...project };
-  // Only strip base64 data URLs (large), keep cloud URLs (strings starting with https)
-  const cleanImageField = (val) => {
-    if (typeof val === 'string' && val.startsWith('data:')) return null;
-    return val;
-  };
-  const cleanSection = (section) => {
-    if (!section) return section;
-    return Object.keys(section).reduce((acc, key) => {
-      acc[key] = { ...section[key], resultImage: cleanImageField(section[key].resultImage) };
-      return acc;
-    }, {});
-  };
-  copy.boards = cleanSection(copy.boards);
-  copy.rooms = cleanSection(copy.rooms);
-  copy.buildingTypes = cleanSection(copy.buildingTypes);
-  copy.inspirationImage = cleanImageField(copy.inspirationImage);
-  return copy;
-}
-
-export function deleteProject(id) {
-  const projects = loadProjects().filter(p => p.id !== id);
-  localStorage.setItem(GALLERY_KEY, JSON.stringify({ projects }));
-}
-
-export function addImageToGallery(imageUrl, projectId, projectName, styleA, styleB) {
-  const images = getGalleryImages();
-  const styleName = [styleA, styleB].filter(Boolean).join(' + ') || 'ללא סגנון';
-  const newImage = {
-    id: Date.now().toString(),
-    imageData: imageUrl,
-    projectId,
-    projectName,
-    styleA,
-    styleB,
-    styleName,
-    createdAt: Date.now(),
-  };
-  images.unshift(newImage);
-  localStorage.setItem(IMAGES_GALLERY_KEY, JSON.stringify(images));
-  return newImage;
-}
-
-export function getGalleryImages() {
-  try {
-    return JSON.parse(localStorage.getItem(IMAGES_GALLERY_KEY) || '[]');
-  } catch {
-    return [];
-  }
+export async function deleteProject(id) {
+  await base44.entities.Project.delete(id);
 }
 
 export function createProject(name) {
   return {
-    id: Date.now().toString(),
-    name: name || '',
-    number: 0, // Will be assigned on save
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
+    id:               null,
+    _isNew:           true,
+    name:             name || '',
+    number:           0,
+    createdAt:        Date.now(),
+    updatedAt:        Date.now(),
+    poeticDescription: '',
     inspirationImage: null,
-    buildingType: 'private',
-    visualDescription: {
-      materials: '',
-      palette: '',
-      light: '',
-      atmosphere: '',
-    },
-    styleSynthesis: {
-      styleA: '',
-      styleB: '',
-      synthesisToken: '',
-    },
+    styleSynthesis:   { styleA: '', styleB: '' },
+    visualDescription: { materials: '', palette: '', light: '', atmosphere: '' },
     boards: {
       materials: { prompt: '', resultImage: null, status: 'empty' },
       colors:    { prompt: '', resultImage: null, status: 'empty' },
