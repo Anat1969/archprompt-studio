@@ -262,7 +262,7 @@ function ImagePage({ project, spread }) {
           <p className="font-mono text-sm text-gold/80 uppercase tracking-widest mb-4">{imageLabel}</p>
           <h2 className="font-display text-5xl font-light text-white leading-tight mb-6">{displayName}</h2>
           {caption && (
-            <p className="font-mono text-base text-white/65 leading-loose max-w-2xl">{caption}</p>
+            <p className="font-display text-3xl text-white/80 leading-relaxed max-w-2xl font-light italic">"{caption}"</p>
           )}
           {synthesis && (
             <p className="font-mono text-sm text-white/30 mt-6 leading-relaxed" dir="ltr">{synthesis.token}</p>
