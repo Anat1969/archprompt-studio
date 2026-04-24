@@ -31,9 +31,7 @@ function buildCaption(imageType, imageKey, project, synthesis) {
   const styleB = STYLES_LIST.find(s => s.id === project.styleSynthesis?.styleB)?.label?.split(' — ')[0] || '';
   const styleRef = [styleA, styleB].filter(Boolean).join(' ו');
   const hasInspiration = !!project.inspirationImage;
-  const inspirationLine = hasInspiration
-    ? 'תמונת ההשראה שנבחרה לפרויקט זה אינה רקע אסתטי — היא הצהרת כוונה.'
-    : '';
+  const inspirationLine = '';
 
   const mat = synthesis?.material || '';
   const tension = synthesis?.tension || '';
@@ -43,7 +41,6 @@ function buildCaption(imageType, imageKey, project, synthesis) {
   if (imageType === 'boards') {
     if (imageKey === 'materials') {
       return [
-        inspirationLine,
         styleRef
           ? `הפרויקט מבוסס על הסינתזה בין ${styleRef} — שתי שפות אדריכליות שמגדירות יחד את הלוגיקה החומרית.`
           : '',
@@ -63,7 +60,6 @@ function buildCaption(imageType, imageKey, project, synthesis) {
     }
     if (imageKey === 'mood') {
       return [
-        inspirationLine,
         token ? `הסינתזה "${token}" נולדה לא מתוך ספרות אדריכלות אלא מתוך תחושה. לוח האווירה הוא הניסיון לתרגם אותה.` : '',
         styleRef ? `ב${styleRef}, האווירה אינה תוצאה של תכנון — היא תנאי מוקדם שלו.` : '',
         'הדפים האלה אינם מסבירים את הפרויקט. הם מרגישים אותו לפני שהוא קיים.',
@@ -94,7 +90,6 @@ function buildCaption(imageType, imageKey, project, synthesis) {
         tension ? `"${tension}" — שאלה שמגיעה לקיצוניות שלה בחדר השינה.` : '',
         styleRef ? `הסינתזה בין ${styleRef} מציבה שאלה: כמה אור? כמה ריק? כמה גוף?` : '',
         mat ? `${mat} כאן אינו חומר — הוא טמפרטורה. הוא מגדיר את ההרגשה של כף יד על קיר בשעה שלוש בלילה.` : '',
-        inspirationLine,
         'חדר השינה הוא הטיעון הכי פילוסופי של הבית: מה אנחנו צריכים כדי לנוח? והתשובה תמיד חושפת ערכים.',
       ].filter(Boolean).join(' ');
     }
@@ -114,7 +109,6 @@ function buildCaption(imageType, imageKey, project, synthesis) {
         project.poeticDescription ? project.poeticDescription : '',
         styleRef ? `ב${styleRef}, החזית היא לא מסך — היא קו דיאלוג בין עולם פנימי לעולם חיצוני.` : '',
         tension ? `"${tension}" — המתח הזה אינו פנימי בלבד. הוא חוצה קיר.` : '',
-        inspirationLine,
         'הבית הפרטי שואל שאלה שהעיר שואלת בחזרה: כמה אתה מוכן לחשוף? כמה אתה מבקש להגן?',
         architect ? `בעקבות ${architect} — שאלת החזית היא שאלת הזהות.` : '',
       ].filter(Boolean).join(' ');
@@ -262,10 +256,10 @@ function ImagePage({ project, spread }) {
           <p className="font-mono text-sm text-gold/80 uppercase tracking-widest mb-4">{imageLabel}</p>
           <h2 className="font-display text-5xl font-light text-white leading-tight mb-6">{displayName}</h2>
           {caption && (
-            <p className="font-display text-3xl text-white/80 leading-relaxed max-w-2xl font-light italic">"{caption}"</p>
+            <p className="font-display text-3xl text-white/80 leading-relaxed max-w-2xl font-light italic">״{caption}״</p>
           )}
           {synthesis && (
-            <p className="font-mono text-sm text-white/30 mt-6 leading-relaxed" dir="ltr">{synthesis.token}</p>
+            <p className="font-display text-xl text-white/35 mt-6 leading-relaxed italic font-light" dir="ltr">"{synthesis.token}"</p>
           )}
         </div>
         <div className="absolute bottom-12 left-14">
@@ -288,7 +282,7 @@ function ImagePage({ project, spread }) {
             <h2 className="font-display text-6xl font-light text-foreground leading-tight mb-6">{imageLabel}</h2>
             <div className="w-8 h-px bg-border mb-8" />
             {caption && (
-              <p className="font-mono text-base text-muted-foreground leading-loose">{caption}</p>
+              <p className="font-display text-2xl text-foreground/80 leading-relaxed font-light italic">״{caption}״</p>
             )}
           </div>
           <div>
@@ -325,14 +319,14 @@ function ImagePage({ project, spread }) {
             <div className="w-full h-px bg-border mb-8" />
             <h2 className="font-display text-5xl font-light text-foreground leading-tight mb-6">{imageLabel}</h2>
             {caption && (
-              <p className="font-mono text-base text-muted-foreground leading-loose">{caption}</p>
+              <p className="font-display text-2xl text-foreground/80 leading-relaxed font-light italic">״{caption}״</p>
             )}
           </div>
           <div className="flex flex-col gap-4">
             {synthesis && (
               <>
                 <div className="w-full h-px bg-border" />
-                <p className="font-mono text-sm text-muted-foreground/55 leading-relaxed" dir="ltr">{synthesis.material}</p>
+                <p className="font-display text-lg text-muted-foreground/60 leading-relaxed italic font-light" dir="ltr">"{synthesis.material}"</p>
               </>
             )}
             <span className="font-mono text-sm text-muted-foreground/25">{String(pageIndex + 2).padStart(2, '0')}</span>
@@ -354,7 +348,7 @@ function ImagePage({ project, spread }) {
         </div>
         <h2 className="font-display text-5xl font-light text-white leading-tight">{imageLabel}</h2>
         {caption && (
-          <p className="font-mono text-lg text-white/65 leading-loose">{caption}</p>
+          <p className="font-display text-2xl text-white/80 leading-relaxed font-light italic">״{caption}״</p>
         )}
         {synthesis && (
           <div className="border-r border-gold/30 pr-5 mt-2">
