@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { loadProjects } from '../lib/storage';
-import MagazineSpread from '../components/MagazineSpread';
+import MagazineSpread, { getDisplayName } from '../components/MagazineSpread';
 
 const BOARD_LABELS    = { materials: 'חומרים', colors: 'צבעים', mood: 'אווירה' };
 const ROOM_LABELS     = { living: 'סלון', kitchen: 'מטבח', bedroom: 'חדר שינה', bathroom: 'חדר רחצה' };
@@ -138,7 +138,7 @@ export default function MagazineViewer() {
           ← מקרא
         </button>
         <div className="flex items-center gap-3">
-          <span className="font-display text-sm text-white/50 tracking-wider">{currentPage?.label || ''}</span>
+          <span className="font-display text-sm text-white/50 tracking-wider">{project ? getDisplayName(project) : ''}</span>
           <span className="font-mono text-xs text-white/20">|</span>
           <span className="font-mono text-xs text-white/20">{pageIdx + 1} / {pages.length}</span>
         </div>
