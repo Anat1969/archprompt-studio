@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadProjects, createProject, saveProject, deleteProject, getProjectName } from '../lib/storage';
+import MigrateLocalStorage, { hasPendingMigration } from '../components/MigrateLocalStorage';
 
 export default function Home() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showMigration, setShowMigration] = useState(() => hasPendingMigration());
+
+  function fetchProjects() {
+    setLoading(true);
+    loadProjects().then(p => { setProjects(p); setLoading(false); });
+  }
 
   useEffect(() => {
-    loadProjects().then(p => { setProjects(p); setLoading(false); });
-  }, []);
+    if (!showMigration) fetchProjects();
+  }, [showMigration]);
 
   async function handleNew() {
     const p = createProject();
@@ -29,6 +36,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {showMigration && (
+        <MigrateLocalStorage onDone={() => { setShowMigration(false); }} />
+      )}
       {/* Header */}
       <header className="border-b border-border px-8 py-6 flex items-center justify-between">
         <div>
