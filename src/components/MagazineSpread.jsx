@@ -354,7 +354,7 @@ function ImagePage({ project, spread }) {
         </div>
         <h2 className="font-display text-5xl font-light text-white leading-tight">{imageLabel}</h2>
         {caption && (
-          <p className="font-mono text-base text-white/65 leading-loose">{caption}</p>
+          <p className="font-mono text-lg text-white/65 leading-loose">{caption}</p>
         )}
         {synthesis && (
           <div className="border-r border-gold/30 pr-5 mt-2">
