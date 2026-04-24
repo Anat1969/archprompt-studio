@@ -169,7 +169,8 @@ const COMPOSITION_RULES = 'Composition: rule of thirds, deep spatial layers, nat
 // ─── Prompt Builders ───────────────────────────────────────────────────────
 
 export function generatePrompt(type, project) {
-  const { visualDescription = {}, styleSynthesis = {}, buildingType = 'private' } = project;
+  const { visualDescription = {}, styleSynthesis = {}, buildingType = 'private', inspirationImage } = project;
+  const imagePrefix = inspirationImage ? `${inspirationImage} ` : '';
   const synthesis = getSynthesis(styleSynthesis.styleA, styleSynthesis.styleB);
   const mat   = MATERIAL_TOKENS[visualDescription.materials]  || '';
   const pal   = PALETTE_TOKENS[visualDescription.palette]     || '';
@@ -193,7 +194,7 @@ export function generatePrompt(type, project) {
       COMPOSITION_RULES,
       'Photorealistic architectural photography, magazine quality.',
     ];
-    return parts.filter(Boolean).join(' ');
+    return imagePrefix + parts.filter(Boolean).join(' ');
   }
 
   const boardTypes = ['materials', 'colors', 'mood'];
@@ -211,7 +212,7 @@ export function generatePrompt(type, project) {
         `Shot on Phase One IQ4 150MP, 100mm Macro, f/11, studio diffused light, zero shadows.`,
         `Editorial material photography, Dezeen magazine quality, ultra sharp.`,
       ];
-      return parts.filter(Boolean).join(' ');
+      return imagePrefix + parts.filter(Boolean).join(' ');
     }
 
     // ── לוח צבעים: שדות צבע אדריכליים טהורים, ללא טקסטורה ──
@@ -227,7 +228,7 @@ export function generatePrompt(type, project) {
         `Shot on Hasselblad X2D, 60mm, f/5.6, soft box, no harsh shadows.`,
         `Color theory composition, Swiss typographic precision, Architectural Digest color editorial.`,
       ];
-      return parts.filter(Boolean).join(' ');
+      return imagePrefix + parts.filter(Boolean).join(' ');
     }
 
     // ── לוח מוד: אווירה וחלל, תמונת השראה קינמטית ──
@@ -243,7 +244,7 @@ export function generatePrompt(type, project) {
         `Shot on Leica SL3, 50mm Summilux f/1.4, available light only.`,
         `Cinematic architectural photography, Wallpaper* magazine mood editorial.`,
       ];
-      return parts.filter(Boolean).join(' ');
+      return imagePrefix + parts.filter(Boolean).join(' ');
     }
   }
 
@@ -264,7 +265,7 @@ export function generatePrompt(type, project) {
     COMPOSITION_RULES,
     'Photorealistic architectural interior photography, magazine quality.',
   ];
-  return parts.filter(Boolean).join(' ');
+  return imagePrefix + parts.filter(Boolean).join(' ');
 }
 
 // synthesizeStyles is used for the synthesis token display
