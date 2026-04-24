@@ -3,7 +3,7 @@ import { getSynthesis, STYLES_LIST, VISUAL_OPTIONS } from '../lib/promptEngine';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getDisplayName(project) {
+export function getDisplayName(project) {
   const { styleSynthesis } = project;
   if (!styleSynthesis?.styleA && !styleSynthesis?.styleB) return project.name || `פרויקט #${project.number}`;
   const a = STYLES_LIST.find(s => s.id === styleSynthesis?.styleA)?.label?.split(' — ')[0] || '';
@@ -23,432 +23,372 @@ function getAllImages(project) {
   ].filter(v => v?.resultImage).map(v => v.resultImage);
 }
 
-const fadeSlide = {
-  initial: { opacity: 0, x: 40 },
-  animate: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] } },
-  exit:    { opacity: 0, x: -40, transition: { duration: 0.3 } },
+// ─── Editorial texts per image type ──────────────────────────────────────────
+
+const BOARD_CAPTIONS = {
+  materials: (synthesis) => synthesis
+    ? `לוח החומרים הוא ה-DNA של הפרויקט. כאן מתגבשים חומרי הגלם שמגדירים את הטמפרטורה החושית — ${synthesis.material || ''}.`
+    : 'לוח החומרים — השכבה הראשונה של הזהות האסתטית של הפרויקט.',
+  colors: (synthesis) => synthesis
+    ? `פלטת הצבעים היא הגל הרגשי של המרחב. ${synthesis.tension ? `"${synthesis.tension}"` : ''} — ניואנסים של אור וצל שמכוונים את ההרגשה ברגע הכניסה.`
+    : 'לוח הצבעים — מפה רגשית של הפרויקט.',
+  mood: (synthesis) => synthesis
+    ? `לוח האווירה מתרגם תחושה לחזון. ${synthesis.token ? synthesis.token : ''} — איסוף רגעים ויזואליים שמדברים את השפה שהמלים לא יכולות.`
+    : 'לוח ההשראה — אוסף תמונות שמגדירות את הרוח הכוללת.',
+};
+
+const ROOM_CAPTIONS = {
+  living: (synthesis) => synthesis
+    ? `הסלון הוא הלב הפועם של הבית — המקום שבו פרטיות מפגשת חברה. ${synthesis.material ? `${synthesis.material}.` : ''} ${synthesis.tension ? `"${synthesis.tension}"` : ''}`
+    : 'הסלון — החלל שמגדיר את אופי הבית.',
+  kitchen: (synthesis) => synthesis
+    ? `המטבח הוא מעבדת היומיום — מקום בו ריח וצורה פוגשים זה את זה. ${synthesis.light ? synthesis.light : ''}. אסתטיקה שמשרתת תפקוד, ותפקוד שמשרת יופי.`
+    : 'המטבח — שם שגרה הופכת לאמנות.',
+  bedroom: (synthesis) => synthesis
+    ? `חדר השינה הוא קודש הקדשים של הבית. ${synthesis.tension ? `"${synthesis.tension}" —` : ''} שקט מחושב שמאפשר לנשמה לנוח.`
+    : 'חדר השינה — החלל האינטימי ביותר.',
+  bathroom: (synthesis) => synthesis
+    ? `חדר הרחצה הוא הרגע הפרטי ביותר. ${synthesis.material ? synthesis.material + '.' : ''} מינימליזם שאינו ויתור — אלא בחירה.`
+    : 'חדר הרחצה — טקס יומי של כניסה וצאת.',
+};
+
+const BUILDING_CAPTIONS = {
+  private: (synthesis, project) => synthesis
+    ? `חזית הבית הפרטי היא המשפט הראשון שהבניין אומר לרחוב. ${project.poeticDescription ? project.poeticDescription : ''}`
+    : 'הבית הפרטי — פנים שפונות החוצה.',
+  building: (synthesis, project) => synthesis
+    ? `הבניין הרב-קומותי מדבר בשפה עירונית — שפה שמחויבת גם לשמיים גם לרחוב. ${synthesis.tension ? `"${synthesis.tension}"` : ''}`
+    : 'הבניין — דיאלוג בין פרט לציבור.',
+};
+
+function getCaption(imageType, imageKey, project) {
+  const synthesis = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
+  if (imageType === 'boards') return (BOARD_CAPTIONS[imageKey] || (() => ''))(synthesis);
+  if (imageType === 'rooms')  return (ROOM_CAPTIONS[imageKey]  || (() => ''))(synthesis);
+  if (imageType === 'buildingTypes') return (BUILDING_CAPTIONS[imageKey] || (() => ''))(synthesis, project);
+  return '';
+}
+
+// ─── Layout variants ──────────────────────────────────────────────────────────
+// Each "page" can have one of several layouts alternating through the magazine.
+
+const LAYOUTS = ['hero-text-bottom', 'text-left-image-right', 'image-left-text-right', 'fullbleed-caption'];
+
+function getLayout(index) {
+  return LAYOUTS[index % LAYOUTS.length];
+}
+
+// ─── Fade transition ──────────────────────────────────────────────────────────
+
+const pageTransition = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] } },
+  exit:    { opacity: 0, transition: { duration: 0.35 } },
 };
 
 // ─── Spread dispatcher ────────────────────────────────────────────────────────
 
 export default function MagazineSpread({ spread, project }) {
-  const key = spread.type + (spread.label || '');
+  const key = spread.type + (spread.label || '') + (spread.imageKey || '');
   return (
     <AnimatePresence mode="wait">
-      <motion.div key={key} {...fadeSlide} className="w-full h-full">
-        {spread.type === 'cover'    && <CoverSpread    project={project} />}
-        {spread.type === 'boards'   && <BoardsSpread   project={project} images={spread.images} />}
-        {spread.type === 'rooms'    && <RoomsSpread    project={project} images={spread.images} />}
-        {spread.type === 'exterior' && <ExteriorSpread project={project} images={spread.images} />}
-        {spread.type === 'colophon' && <ColophonSpread project={project} />}
+      <motion.div key={key} {...pageTransition} className="w-full h-full">
+        {spread.type === 'cover'    && <CoverPage    project={project} />}
+        {spread.type === 'image'    && <ImagePage    project={project} spread={spread} />}
+        {spread.type === 'colophon' && <ColophonPage project={project} />}
       </motion.div>
     </AnimatePresence>
   );
 }
 
-// ─── Cover Spread ─────────────────────────────────────────────────────────────
-// Left page: hero image full bleed. Right page: typographic cover.
+// ─── Cover Page ───────────────────────────────────────────────────────────────
 
-function CoverSpread({ project }) {
-  const synthesis  = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
+function CoverPage({ project }) {
+  const synthesis   = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
   const displayName = getDisplayName(project);
-  const allImages  = getAllImages(project);
-  const heroUrl    = allImages[0] || null;
+  const allImages   = getAllImages(project);
+  const heroUrl     = project.inspirationImage || allImages[0] || null;
 
   return (
-    <div className="w-full h-full grid grid-cols-2">
-      {/* Left — hero image */}
-      <div className="relative overflow-hidden bg-[#1a1a1a]">
+    <div className="w-full h-full relative bg-[#0e0e0e] overflow-hidden flex">
+      {/* Full-bleed hero image, left 60% */}
+      <div className="relative w-[60%] h-full flex-shrink-0">
         {heroUrl ? (
           <>
             <img src={heroUrl} alt={displayName} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-l from-black/60 via-transparent to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-black/80" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           </>
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a]" />
-        )}
-        {/* Synthesis token over image */}
-        {synthesis && (
-          <div className="absolute bottom-10 left-8 right-8">
-            <p className="font-mono text-xs text-white/50 uppercase tracking-widest mb-2">design synthesis</p>
-            <p className="font-display text-xl text-white/90 font-light leading-snug italic" dir="ltr">
-              "{synthesis.tension}"
-            </p>
-          </div>
+          <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#0e0e0e]" />
         )}
       </div>
 
-      {/* Right — typographic cover */}
-      <div className="relative bg-background flex flex-col justify-between px-12 py-14 border-r border-border">
-        {/* Top: magazine logo */}
+      {/* Right text column */}
+      <div className="flex-1 bg-[#0e0e0e] flex flex-col justify-between px-10 py-14 border-r border-white/5">
         <div>
-          <p className="font-mono text-xs tracking-[0.4em] text-gold/70 mb-8">PROMPT STUDIO — ARCHITECTURE MAGAZINE</p>
-          <div className="w-8 h-px bg-gold mb-8" />
-        </div>
-
-        {/* Center: project title */}
-        <div className="flex flex-col gap-6">
-          <span className="font-mono text-xs text-muted-foreground">#{String(project.number).padStart(2, '0')}</span>
-          <h1 className="font-display text-5xl font-light text-foreground leading-tight tracking-wide">{displayName}</h1>
+          <p className="font-mono text-xs tracking-[0.4em] text-gold/60 mb-10 uppercase">Prompt Studio</p>
+          <div className="w-6 h-px bg-gold mb-10" />
+          <span className="font-mono text-xs text-white/25 block mb-3">#{String(project.number).padStart(2, '0')}</span>
+          <h1 className="font-display text-4xl font-light text-white leading-tight tracking-wide mb-8">
+            {displayName}
+          </h1>
           {project.poeticDescription && (
-            <p className="font-mono text-sm text-muted-foreground leading-relaxed italic border-r-2 border-gold pr-4">
+            <p className="font-mono text-sm text-white/50 leading-relaxed italic border-r-2 border-gold/40 pr-4">
               {project.poeticDescription}
             </p>
           )}
-          {synthesis && (
-            <div className="mt-4 flex flex-col gap-3">
-              <div>
-                <p className="font-mono text-xs text-muted-foreground/50 uppercase tracking-widest mb-1">חומרים</p>
-                <p className="font-mono text-xs text-foreground/70 leading-relaxed" dir="ltr">{synthesis.material}</p>
-              </div>
-              <div>
-                <p className="font-mono text-xs text-muted-foreground/50 uppercase tracking-widest mb-1">אסכולה</p>
-                <p className="font-mono text-xs text-foreground/70 leading-relaxed" dir="ltr">{synthesis.architect}</p>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Bottom: date + visual tags */}
-        <div className="flex flex-col gap-3">
-          <div className="w-full h-px bg-border" />
-          <div className="flex flex-wrap gap-2">
-            {['materials', 'palette', 'light', 'atmosphere'].map(cat => {
-              const val = project.visualDescription?.[cat];
-              if (!val) return null;
-              return (
-                <span key={cat} className="font-mono text-xs px-2 py-0.5 border border-border text-muted-foreground">
-                  {getVisualLabel(cat, val)}
-                </span>
-              );
-            })}
-          </div>
-          <p className="font-mono text-xs text-muted-foreground/30">
-            {new Date(project.updatedAt).toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Boards Spread ────────────────────────────────────────────────────────────
-// Left: editorial text about design language. Right: board images grid.
-
-function BoardsSpread({ project, images }) {
-  const synthesis = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
-
-  return (
-    <div className="w-full h-full grid grid-cols-2">
-      {/* Left — editorial */}
-      <div className="relative bg-background flex flex-col justify-between px-12 py-14 overflow-hidden">
-        {/* Background texture: subtle gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/30 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col gap-8">
-          <div>
-            <p className="font-mono text-xs text-gold/70 uppercase tracking-[0.3em] mb-4">שפה עיצובית</p>
-            <h2 className="font-display text-4xl font-light text-foreground leading-tight">
-              לוחות<br />הבסיס
-            </h2>
-          </div>
-
-          {synthesis && (
-            <div className="flex flex-col gap-6">
-              <p className="font-display text-xl font-light text-foreground/80 leading-relaxed italic">
-                "{synthesis.tension}"
-              </p>
-              <div className="w-12 h-px bg-gold" />
-              <p className="font-mono text-sm text-muted-foreground leading-loose" dir="ltr">
-                {synthesis.token}
-              </p>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-4 mt-4">
-            <p className="font-mono text-xs text-muted-foreground/50 uppercase tracking-widest">פלטת חומרים</p>
-            <p className="font-mono text-sm text-muted-foreground leading-relaxed" dir="ltr">
-              {synthesis?.material || '—'}
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <p className="font-mono text-xs text-muted-foreground/50 uppercase tracking-widest">אווירת אור</p>
-            <p className="font-mono text-sm text-muted-foreground leading-relaxed">
-              {project.visualDescription?.light
-                ? getVisualLabel('light', project.visualDescription.light)
-                : '—'}
-            </p>
-          </div>
-        </div>
-
-        <p className="relative z-10 font-mono text-xs text-muted-foreground/20 tracking-widest">DESIGN LANGUAGE</p>
-      </div>
-
-      {/* Right — boards images */}
-      <div className="relative bg-[#111] overflow-hidden">
-        {images.length === 1 && (
-          <div className="w-full h-full">
-            <img src={images[0].url} alt={images[0].label} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <span className="absolute bottom-6 left-6 font-mono text-xs text-white/60 uppercase tracking-widest">{images[0].label}</span>
-          </div>
-        )}
-        {images.length === 2 && (
-          <div className="flex flex-col h-full">
-            {images.map((img, i) => (
-              <div key={i} className={`relative flex-1 overflow-hidden ${i === 0 ? 'border-b border-white/10' : ''}`}>
-                <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                <span className="absolute bottom-4 left-4 font-mono text-xs text-white/50 uppercase tracking-widest">{img.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {images.length >= 3 && (
-          <div className="grid grid-rows-2 h-full">
-            <div className="relative overflow-hidden border-b border-white/10">
-              <img src={images[0].url} alt={images[0].label} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-              <span className="absolute bottom-3 left-3 font-mono text-xs text-white/50 uppercase tracking-widest">{images[0].label}</span>
-            </div>
-            <div className="grid grid-cols-2">
-              {images.slice(1, 3).map((img, i) => (
-                <div key={i} className={`relative overflow-hidden ${i === 0 ? 'border-l border-white/10' : ''}`}>
-                  <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                  <span className="absolute bottom-3 left-3 font-mono text-xs text-white/50 uppercase tracking-widest">{img.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Rooms Spread ─────────────────────────────────────────────────────────────
-// Full-bleed 2-image layout with gradient overlay for editorial text.
-
-function RoomsSpread({ project, images }) {
-  const synthesis = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
-  const [img1, img2] = images;
-
-  return (
-    <div className="w-full h-full grid grid-cols-2">
-      {/* Left — full-bleed room image with text overlay */}
-      <div className="relative overflow-hidden bg-[#111]">
-        {img1 && (
-          <>
-            <img src={img1.url} alt={img1.label} className="w-full h-full object-cover" />
-            {/* Gradient: dark on right edge to blend into text */}
-            <div className="absolute inset-0 bg-gradient-to-l from-black/70 via-black/20 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          </>
-        )}
-        {/* Room label */}
-        <div className="absolute top-8 right-8">
-          <p className="font-mono text-xs text-white/40 uppercase tracking-widest">{img1?.label}</p>
-        </div>
-        {/* Editorial caption */}
         {synthesis && (
-          <div className="absolute bottom-10 left-0 right-0 px-8">
-            <p className="font-display text-2xl text-white/90 font-light leading-snug italic">
+          <div className="flex flex-col gap-3">
+            <p className="font-mono text-xs text-white/20 uppercase tracking-widest mb-1">design tension</p>
+            <p className="font-display text-lg text-white/70 font-light italic leading-snug" dir="ltr">
+              "{synthesis.tension}"
+            </p>
+            <div className="w-full h-px bg-white/10 my-3" />
+            <div className="flex flex-wrap gap-2">
+              {['materials', 'palette', 'light', 'atmosphere'].map(cat => {
+                const val = project.visualDescription?.[cat];
+                if (!val) return null;
+                return (
+                  <span key={cat} className="font-mono text-xs px-2 py-0.5 border border-white/10 text-white/30">
+                    {getVisualLabel(cat, val)}
+                  </span>
+                );
+              })}
+            </div>
+            <p className="font-mono text-xs text-white/15 tracking-widest mt-2">
+              {new Date(project.updatedAt).toLocaleDateString('he-IL', { year: 'numeric', month: 'long' })}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Image Page ───────────────────────────────────────────────────────────────
+// Each image gets its own editorial page. Layout rotates.
+
+function ImagePage({ project, spread }) {
+  const { imageUrl, imageLabel, imageKey, imageType, pageIndex } = spread;
+  const synthesis   = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
+  const displayName = getDisplayName(project);
+  const caption     = getCaption(imageType, imageKey, project);
+  const layout      = getLayout(pageIndex);
+
+  const sectionTag = imageType === 'boards' ? 'שפה עיצובית'
+                   : imageType === 'rooms'   ? 'מרחב פנים'
+                   : 'חזית מבנה';
+
+  // ── Layout A: Full-bleed image, text block at bottom ──
+  if (layout === 'hero-text-bottom') {
+    return (
+      <div className="w-full h-full relative overflow-hidden bg-[#111]">
+        <img src={imageUrl} alt={imageLabel} className="w-full h-full object-cover" />
+        {/* Dark gradient at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+        {/* Top tag */}
+        <div className="absolute top-10 right-10 flex items-center gap-3">
+          <div className="w-4 h-px bg-gold" />
+          <span className="font-mono text-xs text-white/50 uppercase tracking-widest">{sectionTag}</span>
+        </div>
+        {/* Bottom editorial block */}
+        <div className="absolute bottom-0 left-0 right-0 px-14 py-12">
+          <p className="font-mono text-xs text-gold/70 uppercase tracking-widest mb-3">{imageLabel}</p>
+          <h2 className="font-display text-4xl font-light text-white leading-tight mb-5">{displayName}</h2>
+          {caption && (
+            <p className="font-mono text-sm text-white/60 leading-loose max-w-xl">{caption}</p>
+          )}
+          {synthesis && (
+            <p className="font-mono text-xs text-white/25 mt-5 leading-relaxed" dir="ltr">{synthesis.token}</p>
+          )}
+        </div>
+        {/* Page number */}
+        <div className="absolute bottom-10 left-10">
+          <span className="font-mono text-xs text-white/15">{String(pageIndex + 2).padStart(2, '0')}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Layout B: Text left, image right ──
+  if (layout === 'text-left-image-right') {
+    return (
+      <div className="w-full h-full flex bg-background">
+        {/* Left text column */}
+        <div className="w-[42%] flex-shrink-0 flex flex-col justify-between px-12 py-16 border-l border-border">
+          <div>
+            <div className="flex items-center gap-3 mb-10">
+              <div className="w-4 h-px bg-gold" />
+              <span className="font-mono text-xs text-gold/70 uppercase tracking-widest">{sectionTag}</span>
+            </div>
+            <h2 className="font-display text-5xl font-light text-foreground leading-tight mb-6">{imageLabel}</h2>
+            <div className="w-8 h-px bg-border mb-8" />
+            {caption && (
+              <p className="font-mono text-sm text-muted-foreground leading-loose">{caption}</p>
+            )}
+          </div>
+          <div>
+            {synthesis && (
+              <div className="border-r-2 border-gold/30 pr-4 mb-6">
+                <p className="font-display text-lg text-foreground/70 italic font-light leading-snug">
+                  "{synthesis.tension}"
+                </p>
+              </div>
+            )}
+            <span className="font-mono text-xs text-muted-foreground/30">{String(pageIndex + 2).padStart(2, '0')}</span>
+          </div>
+        </div>
+        {/* Right image */}
+        <div className="flex-1 relative overflow-hidden bg-[#111]">
+          <img src={imageUrl} alt={imageLabel} className="w-full h-full object-cover" />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Layout C: Image left, text right ──
+  if (layout === 'image-left-text-right') {
+    return (
+      <div className="w-full h-full flex bg-background">
+        {/* Left image */}
+        <div className="w-[58%] flex-shrink-0 relative overflow-hidden bg-[#111]">
+          <img src={imageUrl} alt={imageLabel} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/20" />
+        </div>
+        {/* Right text column */}
+        <div className="flex-1 flex flex-col justify-between px-12 py-16 border-r border-border">
+          <div>
+            <span className="font-mono text-xs text-muted-foreground/40 uppercase tracking-widest block mb-2">{sectionTag}</span>
+            <div className="w-full h-px bg-border mb-8" />
+            <h2 className="font-display text-4xl font-light text-foreground leading-tight mb-6">{imageLabel}</h2>
+            {caption && (
+              <p className="font-mono text-sm text-muted-foreground leading-loose">{caption}</p>
+            )}
+          </div>
+          <div className="flex flex-col gap-4">
+            {synthesis && (
+              <>
+                <div className="w-full h-px bg-border" />
+                <p className="font-mono text-xs text-muted-foreground/50 leading-relaxed" dir="ltr">{synthesis.material}</p>
+              </>
+            )}
+            <span className="font-mono text-xs text-muted-foreground/25">{String(pageIndex + 2).padStart(2, '0')}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Layout D: Full-bleed + side caption strip ──
+  return (
+    <div className="w-full h-full relative overflow-hidden bg-[#111]">
+      <img src={imageUrl} alt={imageLabel} className="w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-l from-black/85 via-black/20 to-transparent" />
+      {/* Right caption strip */}
+      <div className="absolute top-0 left-0 bottom-0 w-[36%] flex flex-col justify-center px-10 gap-6">
+        <div className="flex items-center gap-3">
+          <div className="w-4 h-px bg-gold" />
+          <span className="font-mono text-xs text-white/50 uppercase tracking-widest">{sectionTag}</span>
+        </div>
+        <h2 className="font-display text-4xl font-light text-white leading-tight">{imageLabel}</h2>
+        {caption && (
+          <p className="font-mono text-sm text-white/60 leading-loose">{caption}</p>
+        )}
+        {synthesis && (
+          <div className="border-r border-gold/30 pr-4 mt-2">
+            <p className="font-display text-base text-white/50 italic font-light leading-snug">
               "{synthesis.token}"
             </p>
           </div>
         )}
-      </div>
-
-      {/* Right — second room image OR text if no second image */}
-      {img2 ? (
-        <div className="relative overflow-hidden bg-[#111] border-r border-white/5">
-          <img src={img2.url} alt={img2.label} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
-          {/* Room label */}
-          <div className="absolute top-8 left-8">
-            <p className="font-mono text-xs text-white/40 uppercase tracking-widest">{img2.label}</p>
-          </div>
-          {/* Atmosphere & material info */}
-          <div className="absolute bottom-10 left-8 right-8 flex flex-col gap-2">
-            {project.visualDescription?.atmosphere && (
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-px bg-white/40" />
-                <p className="font-mono text-xs text-white/50">{getVisualLabel('atmosphere', project.visualDescription.atmosphere)}</p>
-              </div>
-            )}
-            {synthesis && (
-              <p className="font-mono text-xs text-white/30 leading-relaxed" dir="ltr">{synthesis.light}</p>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="bg-background flex flex-col justify-center px-12 py-14">
-          <p className="font-mono text-xs text-gold/70 uppercase tracking-widest mb-6">מרחב פנים</p>
-          <p className="font-display text-3xl font-light text-foreground leading-snug mb-6">{img1?.label}</p>
-          {synthesis && (
-            <p className="font-mono text-sm text-muted-foreground leading-relaxed" dir="ltr">{synthesis.material}</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Exterior Spread ──────────────────────────────────────────────────────────
-// Dramatic full-spread with text block on dark overlay.
-
-function ExteriorSpread({ project, images }) {
-  const synthesis = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
-  const [img1, img2] = images;
-
-  return (
-    <div className="w-full h-full grid grid-cols-2">
-      {/* Left — text editorial */}
-      <div className="relative flex flex-col justify-between px-12 py-14 bg-[#0e0e0e] overflow-hidden">
-        {/* Subtle background image bleed */}
-        {img1 && (
-          <>
-            <img src={img1.url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15 scale-110" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0e0e0e] via-[#0e0e0e]/95 to-[#0e0e0e]/70" />
-          </>
-        )}
-        <div className="relative z-10">
-          <p className="font-mono text-xs text-gold/60 uppercase tracking-[0.3em] mb-6">חזית מבנה</p>
-          <h2 className="font-display text-5xl font-light text-white leading-tight mb-6">
-            {getDisplayName(project)}
-          </h2>
-          <div className="w-12 h-px bg-gold mb-8" />
-          {project.poeticDescription && (
-            <p className="font-mono text-sm text-white/60 leading-loose italic mb-8">
-              {project.poeticDescription}
-            </p>
-          )}
-          {synthesis && (
-            <div className="flex flex-col gap-4">
-              <p className="font-mono text-xs text-white/30 uppercase tracking-widest">design tension</p>
-              <p className="font-display text-lg text-white/80 font-light italic leading-snug" dir="ltr">
-                "{synthesis.tension}"
-              </p>
-            </div>
-          )}
-        </div>
-        <div className="relative z-10">
-          {synthesis && (
-            <p className="font-mono text-xs text-white/20 leading-relaxed" dir="ltr">{synthesis.material}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Right — exterior image(s) */}
-      <div className="relative bg-[#111] overflow-hidden">
-        {img2 ? (
-          <>
-            <div className="h-1/2 relative border-b border-white/10">
-              <img src={img1.url} alt={img1.label} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-              <span className="absolute bottom-3 left-4 font-mono text-xs text-white/40 uppercase tracking-widest">{img1.label}</span>
-            </div>
-            <div className="h-1/2 relative">
-              <img src={img2.url} alt={img2.label} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-              <span className="absolute bottom-3 left-4 font-mono text-xs text-white/40 uppercase tracking-widest">{img2.label}</span>
-            </div>
-          </>
-        ) : img1 ? (
-          <>
-            <img src={img1.url} alt={img1.label} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-black/30" />
-            <span className="absolute bottom-8 left-8 font-mono text-xs text-white/40 uppercase tracking-widest">{img1.label}</span>
-          </>
-        ) : null}
+        <span className="font-mono text-xs text-white/20 mt-6">{String(pageIndex + 2).padStart(2, '0')}</span>
       </div>
     </div>
   );
 }
 
-// ─── Colophon Spread ──────────────────────────────────────────────────────────
-// Final typographic closing page.
+// ─── Colophon Page ────────────────────────────────────────────────────────────
 
-function ColophonSpread({ project }) {
+function ColophonPage({ project }) {
   const synthesis   = getSynthesis(project.styleSynthesis?.styleA, project.styleSynthesis?.styleB);
   const displayName = getDisplayName(project);
   const allImages   = getAllImages(project);
 
   return (
-    <div className="w-full h-full grid grid-cols-2">
-      {/* Left — last image collage */}
-      <div className="relative bg-[#111] overflow-hidden">
-        {allImages.length >= 2 ? (
+    <div className="w-full h-full flex bg-[#0e0e0e]">
+      {/* Left: image collage */}
+      <div className="w-[55%] flex-shrink-0 relative overflow-hidden">
+        {allImages.length >= 4 ? (
           <div className="grid grid-cols-2 grid-rows-2 h-full gap-px bg-white/5">
             {allImages.slice(-4).map((url, i) => (
               <div key={i} className="relative overflow-hidden">
-                <img src={url} alt="" className="w-full h-full object-cover opacity-70" />
-                <div className="absolute inset-0 bg-black/20" />
+                <img src={url} alt="" className="w-full h-full object-cover opacity-60" />
               </div>
             ))}
           </div>
-        ) : allImages.length === 1 ? (
-          <>
-            <img src={allImages[0]} alt="" className="w-full h-full object-cover opacity-60" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#111]/80 to-transparent" />
-          </>
+        ) : allImages.length >= 2 ? (
+          <div className="flex flex-col h-full gap-px bg-white/5">
+            {allImages.slice(-2).map((url, i) => (
+              <div key={i} className="flex-1 relative overflow-hidden">
+                <img src={url} alt="" className="w-full h-full object-cover opacity-60" />
+              </div>
+            ))}
+          </div>
+        ) : allImages[0] ? (
+          <img src={allImages[0]} alt="" className="w-full h-full object-cover opacity-50" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#111]" />
+          <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#0e0e0e]" />
         )}
-        {/* Overlay gradient blend into right side */}
-        <div className="absolute inset-0 bg-gradient-to-l from-[#0e0e0e]/90 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#0e0e0e]/80 pointer-events-none" />
       </div>
 
-      {/* Right — colophon text */}
-      <div className="bg-[#0e0e0e] flex flex-col justify-between px-12 py-14">
+      {/* Right: colophon text */}
+      <div className="flex-1 flex flex-col justify-between px-12 py-16">
         <div>
-          <p className="font-mono text-xs text-gold/50 uppercase tracking-[0.4em] mb-8">כולופון</p>
-          <h2 className="font-display text-4xl font-light text-white leading-tight mb-3">{displayName}</h2>
-          <p className="font-mono text-xs text-white/30 mb-10">
+          <p className="font-mono text-xs text-gold/40 uppercase tracking-[0.4em] mb-10">כולופון</p>
+          <h2 className="font-display text-4xl font-light text-white leading-tight mb-2">{displayName}</h2>
+          <p className="font-mono text-xs text-white/20 mb-10">
             #{String(project.number).padStart(2, '0')} —{' '}
             {new Date(project.updatedAt).toLocaleDateString('he-IL', { year: 'numeric', month: 'long' })}
           </p>
+          {project.poeticDescription && (
+            <p className="font-mono text-sm text-white/50 leading-relaxed italic border-r-2 border-gold/30 pr-4 mb-8">
+              {project.poeticDescription}
+            </p>
+          )}
           {synthesis && (
-            <div className="flex flex-col gap-5 border-r border-gold/30 pr-5">
-              <div>
-                <p className="font-mono text-xs text-white/25 uppercase tracking-widest mb-1">synthesis token</p>
-                <p className="font-mono text-xs text-white/50 leading-relaxed" dir="ltr">{synthesis.token}</p>
-              </div>
-              <div>
-                <p className="font-mono text-xs text-white/25 uppercase tracking-widest mb-1">material palette</p>
-                <p className="font-mono text-xs text-white/50 leading-relaxed" dir="ltr">{synthesis.material}</p>
-              </div>
-              <div>
-                <p className="font-mono text-xs text-white/25 uppercase tracking-widest mb-1">light condition</p>
-                <p className="font-mono text-xs text-white/50 leading-relaxed" dir="ltr">{synthesis.light}</p>
-              </div>
-              <div>
-                <p className="font-mono text-xs text-white/25 uppercase tracking-widest mb-1">architect precedent</p>
-                <p className="font-mono text-xs text-white/50 leading-relaxed" dir="ltr">{synthesis.architect}</p>
-              </div>
+            <div className="flex flex-col gap-5 border-r border-white/10 pr-5">
+              {[
+                { label: 'synthesis token', val: synthesis.token },
+                { label: 'material palette', val: synthesis.material },
+                { label: 'light condition',  val: synthesis.light },
+                { label: 'architect ref',    val: synthesis.architect },
+              ].filter(r => r.val).map(row => (
+                <div key={row.label}>
+                  <p className="font-mono text-xs text-white/20 uppercase tracking-widest mb-1">{row.label}</p>
+                  <p className="font-mono text-xs text-white/45 leading-relaxed" dir="ltr">{row.val}</p>
+                </div>
+              ))}
             </div>
           )}
         </div>
-
-        {/* Visual tags */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <div className="w-full h-px bg-white/10" />
           <div className="flex flex-wrap gap-2">
             {['materials', 'palette', 'light', 'atmosphere'].map(cat => {
               const val = project.visualDescription?.[cat];
               if (!val) return null;
               return (
-                <span key={cat} className="font-mono text-xs px-2 py-0.5 border border-white/10 text-white/30">
+                <span key={cat} className="font-mono text-xs px-2 py-0.5 border border-white/10 text-white/25">
                   {getVisualLabel(cat, val)}
                 </span>
               );
             })}
           </div>
-          <p className="font-mono text-xs text-white/15 tracking-widest">PROMPT STUDIO — ARCHITECTURAL MAGAZINE</p>
+          <p className="font-mono text-xs text-white/10 tracking-widest mt-2">PROMPT STUDIO — ARCHITECTURAL MAGAZINE</p>
         </div>
       </div>
     </div>

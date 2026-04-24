@@ -7,74 +7,98 @@ const BOARD_LABELS    = { materials: 'חומרים', colors: 'צבעים', mood:
 const ROOM_LABELS     = { living: 'סלון', kitchen: 'מטבח', bedroom: 'חדר שינה', bathroom: 'חדר רחצה' };
 const BUILDING_LABELS = { private: 'בית פרטי', building: 'בניין' };
 
-function buildSpreads(project) {
-  const spreads = [{ type: 'cover', label: 'עטיפה' }];
+// Build one page per image
+function buildPages(project) {
+  const pages = [{ type: 'cover', label: 'כריכה' }];
+  let pageIndex = 0;
 
-  const boardImages = Object.entries(project.boards || {})
-    .filter(([, v]) => v?.resultImage)
-    .map(([k, v]) => ({ url: v.resultImage, label: BOARD_LABELS[k] || k }));
-  if (boardImages.length > 0)
-    spreads.push({ type: 'boards', label: 'לוחות בסיס', images: boardImages });
-
-  const roomImages = Object.entries(project.rooms || {})
-    .filter(([, v]) => v?.resultImage)
-    .map(([k, v]) => ({ url: v.resultImage, label: ROOM_LABELS[k] || k }));
-  for (let i = 0; i < roomImages.length; i += 2) {
-    spreads.push({
-      type: 'rooms',
-      label: `מרחבי פנים — ${roomImages.slice(i, i+2).map(r => r.label).join(', ')}`,
-      images: roomImages.slice(i, i + 2),
+  const boardEntries = Object.entries(project.boards || {}).filter(([, v]) => v?.resultImage);
+  boardEntries.forEach(([key, val]) => {
+    pages.push({
+      type: 'image',
+      label: BOARD_LABELS[key] || key,
+      imageUrl: val.resultImage,
+      imageLabel: BOARD_LABELS[key] || key,
+      imageKey: key,
+      imageType: 'boards',
+      pageIndex: pageIndex++,
     });
-  }
+  });
 
-  const extImages = Object.entries(project.buildingTypes || {})
-    .filter(([, v]) => v?.resultImage)
-    .map(([k, v]) => ({ url: v.resultImage, label: BUILDING_LABELS[k] || k }));
-  if (extImages.length > 0)
-    spreads.push({ type: 'exterior', label: 'חזית מבנה', images: extImages });
+  const roomEntries = Object.entries(project.rooms || {}).filter(([, v]) => v?.resultImage);
+  roomEntries.forEach(([key, val]) => {
+    pages.push({
+      type: 'image',
+      label: ROOM_LABELS[key] || key,
+      imageUrl: val.resultImage,
+      imageLabel: ROOM_LABELS[key] || key,
+      imageKey: key,
+      imageType: 'rooms',
+      pageIndex: pageIndex++,
+    });
+  });
 
-  spreads.push({ type: 'colophon', label: 'כולופון' });
-  return spreads;
+  const extEntries = Object.entries(project.buildingTypes || {}).filter(([, v]) => v?.resultImage);
+  extEntries.forEach(([key, val]) => {
+    pages.push({
+      type: 'image',
+      label: BUILDING_LABELS[key] || key,
+      imageUrl: val.resultImage,
+      imageLabel: BUILDING_LABELS[key] || key,
+      imageKey: key,
+      imageType: 'buildingTypes',
+      pageIndex: pageIndex++,
+    });
+  });
+
+  pages.push({ type: 'colophon', label: 'כולופון' });
+  return pages;
 }
 
 export default function MagazineViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [projects, setProjects]     = useState([]);
+  const [projects, setProjects]   = useState([]);
   const [projectIdx, setProjectIdx] = useState(0);
-  const [spreadIdx, setSpreadIdx]   = useState(0);
-  const [loading, setLoading]       = useState(true);
+  const [pageIdx, setPageIdx]     = useState(0);
+  const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
     loadProjects().then(all => {
       const withImages = all.filter(p => {
-        const vals = [...Object.values(p.boards || {}), ...Object.values(p.rooms || {}), ...Object.values(p.buildingTypes || {})];
+        const vals = [
+          ...Object.values(p.boards || {}),
+          ...Object.values(p.rooms || {}),
+          ...Object.values(p.buildingTypes || {}),
+        ];
         return vals.some(v => v?.resultImage);
       });
       setProjects(withImages);
       const idx = withImages.findIndex(p => p.id === id);
       setProjectIdx(idx >= 0 ? idx : 0);
-      setSpreadIdx(0);
+      setPageIdx(0);
       setLoading(false);
     });
   }, [id]);
 
   const project = projects[projectIdx];
-  const spreads = project ? buildSpreads(project) : [];
+  const pages   = project ? buildPages(project) : [];
 
   const goNext = useCallback(() => {
-    if (spreadIdx < spreads.length - 1) setSpreadIdx(s => s + 1);
+    if (pageIdx < pages.length - 1) setPageIdx(p => p + 1);
     else if (projectIdx < projects.length - 1) {
       navigate(`/magazine/${projects[projectIdx + 1].id}`);
+      setPageIdx(0);
     }
-  }, [spreadIdx, spreads.length, projectIdx, projects, navigate]);
+  }, [pageIdx, pages.length, projectIdx, projects, navigate]);
 
   const goPrev = useCallback(() => {
-    if (spreadIdx > 0) setSpreadIdx(s => s - 1);
+    if (pageIdx > 0) setPageIdx(p => p - 1);
     else if (projectIdx > 0) {
       navigate(`/magazine/${projects[projectIdx - 1].id}`);
+      setPageIdx(0);
     }
-  }, [spreadIdx, projectIdx, projects, navigate]);
+  }, [pageIdx, projectIdx, projects, navigate]);
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -87,64 +111,83 @@ export default function MagazineViewer() {
   }, [goNext, goPrev, navigate]);
 
   if (loading) return (
-    <div className="fixed inset-0 bg-[#111] flex items-center justify-center">
+    <div className="fixed inset-0 bg-[#0e0e0e] flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
     </div>
   );
 
   if (!project) return (
-    <div className="fixed inset-0 bg-[#111] flex items-center justify-center">
+    <div className="fixed inset-0 bg-[#0e0e0e] flex items-center justify-center">
       <p className="font-mono text-sm text-white/40">פרויקט לא נמצא</p>
     </div>
   );
 
-  const canPrev = spreadIdx > 0 || projectIdx > 0;
-  const canNext = spreadIdx < spreads.length - 1 || projectIdx < projects.length - 1;
+  const canPrev = pageIdx > 0 || projectIdx > 0;
+  const canNext = pageIdx < pages.length - 1 || projectIdx < projects.length - 1;
+  const currentPage = pages[pageIdx];
 
   return (
-    <div className="fixed inset-0 bg-[#111] flex flex-col overflow-hidden" dir="rtl">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-3 bg-black/80 border-b border-white/10 z-10 flex-shrink-0">
-        <button onClick={() => navigate('/gallery')} className="font-mono text-xs text-white/50 hover:text-white transition-colors">
+    <div className="fixed inset-0 bg-[#0e0e0e] flex flex-col overflow-hidden" dir="rtl">
+
+      {/* Top bar — minimal */}
+      <div className="flex items-center justify-between px-8 py-3 bg-black/60 border-b border-white/5 z-10 flex-shrink-0 backdrop-blur-sm">
+        <button
+          onClick={() => navigate('/gallery')}
+          className="font-mono text-xs text-white/30 hover:text-white/70 transition-colors tracking-widest"
+        >
           ← מקרא
         </button>
-        <div className="flex items-center gap-4">
-          <span className="font-display text-sm text-white/70 tracking-wider">{spreads[spreadIdx]?.label || ''}</span>
-          <span className="font-mono text-xs text-white/30">{spreadIdx + 1} / {spreads.length}</span>
+        <div className="flex items-center gap-3">
+          <span className="font-display text-sm text-white/50 tracking-wider">{currentPage?.label || ''}</span>
+          <span className="font-mono text-xs text-white/20">|</span>
+          <span className="font-mono text-xs text-white/20">{pageIdx + 1} / {pages.length}</span>
         </div>
-        {projects.length > 1 && (
-          <span className="font-mono text-xs text-white/30">פרויקט {projectIdx + 1} / {projects.length}</span>
-        )}
-        {projects.length === 1 && <div />}
+        {projects.length > 1
+          ? <span className="font-mono text-xs text-white/20">פרויקט {projectIdx + 1} / {projects.length}</span>
+          : <div className="w-24" />
+        }
       </div>
 
-      {/* Spread */}
+      {/* Page content */}
       <div className="flex-1 overflow-hidden relative">
-        <MagazineSpread spread={spreads[spreadIdx]} project={project} />
+        <MagazineSpread spread={currentPage} project={project} />
 
+        {/* Prev arrow */}
         {canPrev && (
-          <button onClick={goPrev} className="absolute right-0 top-0 h-full w-20 flex items-center justify-end pr-4 group z-10">
-            <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-white/15 border border-white/10 group-hover:border-white/30 flex items-center justify-center transition-all">
-              <span className="text-white/50 group-hover:text-white text-lg">›</span>
+          <button
+            onClick={goPrev}
+            className="absolute right-0 top-0 h-full w-16 flex items-center justify-center group z-10 hover:bg-white/5 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full border border-white/10 group-hover:border-white/30 flex items-center justify-center transition-all">
+              <span className="text-white/30 group-hover:text-white/80 text-lg leading-none">›</span>
             </div>
           </button>
         )}
+
+        {/* Next arrow */}
         {canNext && (
-          <button onClick={goNext} className="absolute left-0 top-0 h-full w-20 flex items-center justify-start pl-4 group z-10">
-            <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-white/15 border border-white/10 group-hover:border-white/30 flex items-center justify-center transition-all">
-              <span className="text-white/50 group-hover:text-white text-lg">‹</span>
+          <button
+            onClick={goNext}
+            className="absolute left-0 top-0 h-full w-16 flex items-center justify-center group z-10 hover:bg-white/5 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full border border-white/10 group-hover:border-white/30 flex items-center justify-center transition-all">
+              <span className="text-white/30 group-hover:text-white/80 text-lg leading-none">‹</span>
             </div>
           </button>
         )}
       </div>
 
-      {/* Dots */}
-      <div className="flex items-center justify-center gap-2 py-3 bg-black/60 flex-shrink-0">
-        {spreads.map((_, i) => (
+      {/* Bottom progress dots */}
+      <div className="flex items-center justify-center gap-1.5 py-3 bg-black/40 flex-shrink-0">
+        {pages.map((_, i) => (
           <button
             key={i}
-            onClick={() => setSpreadIdx(i)}
-            className={`transition-all duration-200 rounded-full ${i === spreadIdx ? 'w-6 h-1.5 bg-gold' : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'}`}
+            onClick={() => setPageIdx(i)}
+            className={`transition-all duration-300 rounded-full ${
+              i === pageIdx
+                ? 'w-6 h-1.5 bg-gold'
+                : 'w-1.5 h-1.5 bg-white/15 hover:bg-white/30'
+            }`}
           />
         ))}
       </div>
