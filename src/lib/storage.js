@@ -36,28 +36,22 @@ export function saveProject(project) {
 
 function stripImages(project) {
   const copy = { ...project };
-  if (copy.boards) {
-    copy.boards = Object.keys(copy.boards).reduce((acc, key) => {
-      const { resultImage, ...rest } = copy.boards[key];
-      acc[key] = rest;
+  // Only strip base64 data URLs (large), keep cloud URLs (strings starting with https)
+  const cleanImageField = (val) => {
+    if (typeof val === 'string' && val.startsWith('data:')) return null;
+    return val;
+  };
+  const cleanSection = (section) => {
+    if (!section) return section;
+    return Object.keys(section).reduce((acc, key) => {
+      acc[key] = { ...section[key], resultImage: cleanImageField(section[key].resultImage) };
       return acc;
     }, {});
-  }
-  if (copy.rooms) {
-    copy.rooms = Object.keys(copy.rooms).reduce((acc, key) => {
-      const { resultImage, ...rest } = copy.rooms[key];
-      acc[key] = rest;
-      return acc;
-    }, {});
-  }
-  if (copy.buildingTypes) {
-    copy.buildingTypes = Object.keys(copy.buildingTypes).reduce((acc, key) => {
-      const { resultImage, ...rest } = copy.buildingTypes[key];
-      acc[key] = rest;
-      return acc;
-    }, {});
-  }
-  copy.inspirationImage = null;
+  };
+  copy.boards = cleanSection(copy.boards);
+  copy.rooms = cleanSection(copy.rooms);
+  copy.buildingTypes = cleanSection(copy.buildingTypes);
+  copy.inspirationImage = cleanImageField(copy.inspirationImage);
   return copy;
 }
 
@@ -66,18 +60,17 @@ export function deleteProject(id) {
   localStorage.setItem(GALLERY_KEY, JSON.stringify({ projects }));
 }
 
-export function addImageToGallery(image, projectId, projectName, styleA, styleB) {
+export function addImageToGallery(imageUrl, projectId, projectName, styleA, styleB) {
   const images = getGalleryImages();
-  const sequenceNum = images.filter(img => img.projectId === projectId).length + 1;
-  const styleName = [styleA, styleB].filter(Boolean).join(' + ') || 'no-style';
+  const styleName = [styleA, styleB].filter(Boolean).join(' + ') || 'ללא סגנון';
   const newImage = {
     id: Date.now().toString(),
+    imageData: imageUrl,
     projectId,
     projectName,
     styleA,
     styleB,
     styleName,
-    sequenceNum,
     createdAt: Date.now(),
   };
   images.unshift(newImage);
