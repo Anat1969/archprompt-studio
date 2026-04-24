@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import WorkScreen from './pages/WorkScreen';
 import Gallery from './pages/Gallery';
 import Landing from './pages/Landing';
+import MagazineViewer from './pages/MagazineViewer';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -40,6 +41,7 @@ const AuthenticatedApp = () => {
       <Route path="/projects" element={<Home />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/work/:id" element={<WorkScreen />} />
+      <Route path="/magazine/:id" element={<MagazineViewer />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
