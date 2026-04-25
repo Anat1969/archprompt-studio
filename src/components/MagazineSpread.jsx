@@ -377,7 +377,7 @@ function ColophonPage({ project }) {
           <div className="grid grid-cols-2 grid-rows-2 h-full gap-px bg-white/5">
             {allImages.slice(-4).map((url, i) => (
               <div key={i} className="relative overflow-hidden">
-                <img src={url} alt="" className="w-full h-full object-cover object-center opacity-60" />
+                <img src={url} alt="" className="w-full h-full object-cover object-center" />
               </div>
             ))}
           </div>
@@ -385,12 +385,12 @@ function ColophonPage({ project }) {
           <div className="flex flex-col h-full gap-px bg-white/5">
             {allImages.slice(-2).map((url, i) => (
               <div key={i} className="flex-1 relative overflow-hidden">
-                <img src={url} alt="" className="w-full h-full object-cover object-center opacity-60" />
+                <img src={url} alt="" className="w-full h-full object-cover object-center" />
               </div>
             ))}
           </div>
         ) : allImages[0] ? (
-          <img src={allImages[0]} alt="" className="w-full h-full object-cover object-center opacity-50" />
+          <img src={allImages[0]} alt="" className="w-full h-full object-cover object-center" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#0e0e0e]" />
         )}
